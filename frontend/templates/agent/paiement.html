@@ -1,0 +1,72 @@
+{% extends "agent/base_agent.html" %}
+{% block titre %}BBDA Events : Confirmation de paiement{% endblock %}
+{% block contenu_agent %}
+<div class="entete-agent">
+    <h1>Confirmation du paiement</h1>
+    <a class="bouton-annuler" href="{{ url_for('agent.traiter_declaration', declaration_id=declaration.id) }}">&larr; Retour au dossier</a>
+</div>
+
+<div class="bloc-agent">
+    <h2>Résumé</h2>
+    <p>
+        Organisateur : <strong>{{ declaration.organisateur.utilisateur.prenom }} {{ declaration.organisateur.utilisateur.nom }}</strong>
+        &nbsp;|&nbsp; Événement : {{ declaration.nature_manifestation }} - {{ declaration.nom_artiste_evenement }}
+    </p>
+    <p class="total-montant-calcule">
+        Montant total fixé : Tarif {{ "%.0f"|format(evaluation.tarif) }} FCFA + Redevance {{ "%.0f"|format(evaluation.redevance) }} FCFA
+        = Total {{ "%.0f"|format(evaluation.montant_total) }} FCFA
+    </p>
+    <p>
+        Déjà encaissé : <strong>{{ "%.0f"|format(montant_deja_paye) }} FCFA</strong>
+        &nbsp;|&nbsp; Reste à percevoir : <strong>{{ "%.0f"|format(reste_du) }} FCFA</strong>
+    </p>
+</div>
+
+<div class="bloc-agent">
+    <h2>Formulaire de confirmation</h2>
+    <form method="post" action="{{ url_for('agent.confirmer_paiement', declaration_id=declaration.id) }}" id="formulaire-confirmation-paiement">
+        <div class="champ-formulaire">
+            <label>Mode de paiement <span class="obligatoire">*</span></label>
+            <div class="groupe-radio">
+                <label><input type="radio" name="mode_paiement" value="especes" required> Espèces</label>
+                <label><input type="radio" name="mode_paiement" value="cheque" id="mode-cheque-radio"> Chèque</label>
+                <label><input type="radio" name="mode_paiement" value="orange_money"> Orange Money</label>
+            </div>
+        </div>
+
+        <div class="champ-formulaire champ-precision" id="champ-numero-cheque">
+            <label for="numero_cheque">N&deg; de chèque</label>
+            <input type="text" id="numero_cheque" name="numero_cheque">
+        </div>
+
+        <div class="ligne-deux-colonnes">
+            <div class="champ-formulaire">
+                <label for="montant_chiffres">Montant perçu en chiffres (FCFA) <span class="obligatoire">*</span></label>
+                <input type="number" id="montant_chiffres" name="montant_chiffres" min="1" max="{{ reste_du|int }}" step="1" value="{{ reste_du|int }}" required>
+                <p class="aide-champ">Maximum autorisé : {{ "%.0f"|format(reste_du) }} FCFA (reste dû).</p>
+            </div>
+            <div class="champ-formulaire">
+                <label for="montant_lettres">Montant perçu en lettres <span class="obligatoire">*</span></label>
+                <input type="text" id="montant_lettres" name="montant_lettres" placeholder="ex: Vingt-cinq mille francs" required>
+            </div>
+        </div>
+
+        <div class="champ-formulaire">
+            <label>Type de paiement <span class="obligatoire">*</span></label>
+            <div class="groupe-radio">
+                <label><input type="radio" name="type_paiement" value="integral" id="type-integral-radio" required checked> Intégral (paiement total du reste)</label>
+                <label><input type="radio" name="type_paiement" value="partiel" id="type-partiel-radio"> Partiel</label>
+            </div>
+        </div>
+
+        <div class="champ-formulaire champ-precision" id="champ-reste-a-payer">
+            <label for="reste_a_payer">Reste à payer après ce versement (FCFA)</label>
+            <input type="number" id="reste_a_payer" name="reste_a_payer" min="0" max="{{ reste_du|int }}" step="1">
+            <p class="aide-champ">Montant perçu + reste à payer doit égaler {{ "%.0f"|format(reste_du) }} FCFA.</p>
+        </div>
+
+        <button type="submit" id="bouton-confirmer-paiement" class="bouton-soumettre bouton-soumettre--auto">Confirmer le paiement et générer la quittance</button>
+        <p class="aide-champ">Ne cliquez qu'une seule fois : le bouton se désactive pendant le traitement. Après validation, ce dossier sera verrouillé.</p>
+    </form>
+</div>
+{% endblock %}

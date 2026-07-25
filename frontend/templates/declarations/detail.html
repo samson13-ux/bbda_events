@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block titre %}BBDA Events : Déclaration #{{ declaration.id }}{% endblock %}
+{% block contenu %}
+<div class="entete-detail">
+    <div>
+        <h1>Déclaration #{{ declaration.id }} - {{ declaration.nature_manifestation }}</h1>
+        <span class="badge badge--grand badge--{{ libelle_css }}">{{ libelle_statut }}</span>
+    </div>
+    <a class="bouton-annuler" href="{{ url_for('declarations.tableau_de_bord') }}">&larr; Tableau de bord</a>
+</div>
+
+<div class="mise-en-page-detail">
+    <ol class="frise-chronologique">
+        {% for etape in frise %}
+        <li class="frise-etape {{ 'frise-etape--franchie' if etape.franchie else 'frise-etape--future' }}">
+            {{ etape.libelle }}
+        </li>
+        {% endfor %}
+    </ol>
+
+    <div class="contenu-detail">
+        {% if declaration.statut in ("montant_fixe", "paiement_en_attente") and declaration.evaluation %}
+        <div class="encadre-montant">
+            <p>
+                Montant à payer : {{ "%.0f"|format(declaration.evaluation.tarif) }} FCFA (tarif) +
+                {{ "%.0f"|format(declaration.evaluation.redevance) }} FCFA (redevance) =
+                {{ "%.0f"|format(declaration.evaluation.montant_total) }} FCFA au total.
+                Présentez-vous au bureau du BBDA pour effectuer votre paiement.
+            </p>
+            {% if total_paye > 0 %}
+            <p>
+                Déjà réglé : {{ "%.0f"|format(total_paye) }} FCFA - Reste à payer :
+                {{ "%.0f"|format(declaration.evaluation.montant_total - total_paye) }} FCFA.
+            </p>
+            {% endif %}
+            <p>Coordonnées : 01 BP 3926 Ouagadougou 01 - Tél. : 25 32 47 50</p>
+        </div>
+        {% endif %}
+
+        {% if declaration.statut == "quittance_delivree" %}
+        <a class="bouton-telecharger" href="{{ url_for('exports.quittance', declaration_id=declaration.id) }}">
+            Télécharger ma quittance PDF
+        </a>
+        {% endif %}
+
+        <section class="section-formulaire">
+            <h2>Détails de votre déclaration</h2>
+
+            <h3>Identité du demandeur</h3>
+            <p>{{ declaration.prenom_demandeur }} {{ declaration.nom_demandeur }} ({{ declaration.qualite_demandeur }})</p>
+            <p>{{ declaration.telephone }} - {{ declaration.email }}</p>
+
+            <h3>Manifestation</h3>
+            <p>{{ declaration.nature_manifestation }} - {{ declaration.nom_artiste_evenement }}</p>
+            <p>{{ declaration.nom_salle }}, {{ declaration.adresse }}, {{ declaration.ville }}</p>
+            <p>Le {{ declaration.date_evenement.strftime("%d/%m/%Y à %Hh%M") }} - Durée : {{ declaration.duree_heures }} h</p>
+            <p>Capacité d'accueil : {{ declaration.capacite_accueil }} personnes - Entrée {{ "payante" if declaration.entree_payante else "gratuite" }}</p>
+            <p>Diffusion musicale : {{ declaration.nature_diffusion }}</p>
+            {% if declaration.autres_details %}
+            <p>Autres détails : {{ declaration.autres_details }}</p>
+            {% endif %}
+
+            {% if declaration.artistes %}
+            <h3>Artistes prévus</h3>
+            <ul>
+                {% for artiste in declaration.artistes %}
+                <li>{{ artiste.nom_artiste }}{% if artiste.discipline %} - {{ artiste.discipline }}{% endif %}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+
+            <h3>Visibilité publique</h3>
+            {% if not declaration.promouvoir %}
+            <p class="indicateur-visibilite indicateur-visibilite--non">
+                Cet événement n'est pas destiné à la page publique.
+            </p>
+            {% elif declaration.statut == "quittance_delivree" %}
+            <p class="indicateur-visibilite indicateur-visibilite--oui">
+                Visible publiquement -
+                <a href="{{ url_for('public.detail_evenement', declaration_id=declaration.id) }}">
+                    voir la page publique
+                </a>
+            </p>
+            {% else %}
+            <p class="indicateur-visibilite indicateur-visibilite--attente">
+                Sera publié sur la page publique après délivrance de la quittance.
+            </p>
+            {% endif %}
+        </section>
+    </div>
+</div>
+{% endblock %}

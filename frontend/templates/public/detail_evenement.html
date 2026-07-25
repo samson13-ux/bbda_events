@@ -1,0 +1,45 @@
+{% extends "public/base_public.html" %}
+{% block titre %}BBDA Events : {{ evenement.nom_artiste_evenement }}{% endblock %}
+{% block contenu %}
+<section class="detail-evenement">
+    <div class="detail-evenement__visuel">
+        {% if evenement.affiche_path %}
+        <img src="{{ url_for('static', filename=evenement.affiche_path) }}" alt="Affiche de {{ evenement.nom_artiste_evenement }}">
+        {% else %}
+        <div class="detail-evenement__placeholder">{{ evenement.nature_manifestation }}</div>
+        {% endif %}
+    </div>
+
+    <div class="detail-evenement__corps">
+        <p class="carte-evenement__type">{{ evenement.nature_manifestation }}</p>
+        <h1>{{ evenement.nom_artiste_evenement }}</h1>
+        <p class="detail-evenement__meta">{{ evenement.date_evenement.strftime("%d/%m/%Y à %Hh%M") }} - Durée : {{ evenement.duree_heures }} h</p>
+        <p>{{ evenement.nom_salle }}, {{ evenement.adresse }}, {{ evenement.ville }}</p>
+        <p>Entrée {{ "payante" if evenement.entree_payante else "gratuite" }} - Diffusion : {{ evenement.nature_diffusion }}</p>
+
+        {% if evenement.description_publique %}
+        <h2>Description</h2>
+        <p>{{ evenement.description_publique }}</p>
+        {% endif %}
+
+        {% if evenement.artistes %}
+        <h2>Artistes prévus</h2>
+        <ul>
+            {% for artiste in evenement.artistes %}
+            <li>{{ artiste.nom_artiste }}{% if artiste.discipline %} - {{ artiste.discipline }}{% endif %}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+        {% if evenement.contact_public %}
+        <h2>Contact organisateur</h2>
+        <p>{{ evenement.telephone }} - {{ evenement.email }}</p>
+        {% endif %}
+
+        <div class="heros-public__actions">
+            <a class="bouton-public bouton-public--contour-clair detail-evenement__retour" href="{{ url_for('public.evenements') }}">&larr; Tous les événements</a>
+            <a class="bouton-public" href="{{ url_for('public.billetterie_bientot') }}">Acheter un billet</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

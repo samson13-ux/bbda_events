@@ -1,0 +1,133 @@
+{% extends "admin/base_admin.html" %}
+{% block titre %}BBDA Events : Statistiques{% endblock %}
+{% block contenu_admin %}
+<div class="entete-agent">
+    <h1>Statistiques avancées - {{ resume.annee }}</h1>
+</div>
+
+<div class="cartes-statistiques">
+    <div class="carte-stat">
+        <span class="carte-stat__valeur">{{ resume.declarations_totales }}</span>
+        <span class="carte-stat__libelle">Déclarations totales</span>
+    </div>
+    <div class="carte-stat">
+        <span class="carte-stat__valeur">{{ "%.0f"|format(resume.redevances_percues) }}</span>
+        <span class="carte-stat__libelle">Redevances perçues (FCFA)</span>
+    </div>
+    <div class="carte-stat">
+        <span class="carte-stat__valeur">{{ "%.0f"|format(resume.arrieres_en_cours) }}</span>
+        <span class="carte-stat__libelle">Arriérés en cours (FCFA)</span>
+    </div>
+    <div class="carte-stat">
+        <span class="carte-stat__valeur">{{ resume.quittances_delivrees }}</span>
+        <span class="carte-stat__libelle">Quittances délivrées</span>
+    </div>
+</div>
+
+<div class="section-agent">
+    <h2>Déclarations par mois</h2>
+    <div class="graphique-barres">
+        {% for barre in barres_declarations %}
+        <div class="graphique-barres__ligne">
+            <span class="graphique-barres__libelle">{{ barre.libelle }}</span>
+            <div class="graphique-barres__piste">
+                <div class="graphique-barres__barre" style="width: {{ barre.pourcentage }}%;"></div>
+            </div>
+            <span class="graphique-barres__valeur">{{ barre.valeur }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="section-agent">
+    <h2>Redevances perçues par mois (FCFA)</h2>
+    <div class="graphique-barres">
+        {% for barre in barres_redevances %}
+        <div class="graphique-barres__ligne">
+            <span class="graphique-barres__libelle">{{ barre.libelle }}</span>
+            <div class="graphique-barres__piste">
+                <div class="graphique-barres__barre graphique-barres__barre--accent" style="width: {{ barre.pourcentage }}%;"></div>
+            </div>
+            <span class="graphique-barres__valeur">{{ "%.0f"|format(barre.valeur) }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="section-agent">
+    <h2>Répartition par type d'événement</h2>
+    {% if barres_repartition %}
+    <div class="graphique-barres">
+        {% for barre in barres_repartition %}
+        <div class="graphique-barres__ligne">
+            <span class="graphique-barres__libelle">{{ barre.libelle }}</span>
+            <div class="graphique-barres__piste">
+                <div class="graphique-barres__barre" style="width: {{ barre.pourcentage }}%;"></div>
+            </div>
+            <span class="graphique-barres__valeur">{{ barre.valeur }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="message-vide">Aucune déclaration pour le moment.</p>
+    {% endif %}
+</div>
+
+<div class="section-agent">
+    <h2>Top organisateurs</h2>
+    {% if top_organisateurs %}
+    <table class="tableau-declarations">
+        <thead>
+            <tr>
+                <th>Rang</th>
+                <th>Nom</th>
+                <th>Déclarations</th>
+                <th>Total payé</th>
+                <th>Dernière décl.</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for orga in top_organisateurs %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ orga.prenom }} {{ orga.nom }}</td>
+                <td>{{ orga.nb_declarations }}</td>
+                <td>{{ "%.0f"|format(orga.total_paye) }} FCFA</td>
+                <td>{{ orga.derniere_declaration.strftime("%d/%m/%Y") }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="message-vide">Aucun organisateur classé pour le moment.</p>
+    {% endif %}
+</div>
+
+<div class="section-agent">
+    <h2>Arriérés</h2>
+    <div class="cartes-statistiques">
+        <div class="carte-stat">
+            <span class="carte-stat__valeur">{{ "%.0f"|format(stats_arrieres.total_du) }}</span>
+            <span class="carte-stat__libelle">Montant total dû (FCFA)</span>
+        </div>
+        <div class="carte-stat">
+            <span class="carte-stat__valeur">{{ stats_arrieres.nombre_organisateurs }}</span>
+            <span class="carte-stat__libelle">Organisateurs débiteurs</span>
+        </div>
+        <div class="carte-stat">
+            <span class="carte-stat__valeur">{{ "%.0f"|format(stats_arrieres.montant_moyen) }}</span>
+            <span class="carte-stat__libelle">Montant moyen (FCFA)</span>
+        </div>
+        <div class="carte-stat">
+            <span class="carte-stat__valeur">
+                {% if stats_arrieres.plus_ancien %}
+                {{ stats_arrieres.plus_ancien.strftime("%d/%m/%Y") }}
+                {% else %}
+                -
+                {% endif %}
+            </span>
+            <span class="carte-stat__libelle">Échéance la plus ancienne</span>
+        </div>
+    </div>
+</div>
+{% endblock %}

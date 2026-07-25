@@ -1,0 +1,152 @@
+{% extends "agent/base_agent.html" %}
+{% block titre %}BBDA Events : Traitement déclaration #{{ declaration.id }}{% endblock %}
+{% block contenu_agent %}
+<div class="entete-agent">
+    <div>
+        <h1>Déclaration #{{ declaration.id }} - {{ declaration.nature_manifestation }}</h1>
+        <span class="badge badge--grand badge--{{ libelle_css }}">{{ libelle_statut }}</span>
+    </div>
+    <div>
+        {% if soldee %}
+        <span class="badge badge--quittance">Paiement déjà enregistré — quittance envoyée</span>
+        {% elif declaration.statut in ("montant_fixe", "paiement_en_attente") %}
+        <a class="bouton-soumettre bouton-soumettre--auto" href="{{ url_for('agent.paiement', declaration_id=declaration.id) }}">Confirmer le paiement</a>
+        {% endif %}
+        <a class="bouton-annuler" href="{{ url_for('agent.tableau_de_bord') }}">&larr; Tableau de bord</a>
+    </div>
+</div>
+
+<div class="mise-en-page-traitement">
+    <div class="colonne-traitement">
+        <div class="bloc-agent">
+            <h2>Informations de la déclaration</h2>
+
+            <h3>Identité du demandeur</h3>
+            <p>{{ declaration.prenom_demandeur }} {{ declaration.nom_demandeur }} ({{ declaration.qualite_demandeur }})</p>
+            <p>{{ declaration.telephone }} - {{ declaration.email }}</p>
+
+            <h3>Manifestation</h3>
+            <p>{{ declaration.nature_manifestation }} - {{ declaration.nom_artiste_evenement }}</p>
+            <p>{{ declaration.nom_salle }}, {{ declaration.adresse }}, {{ declaration.ville }}</p>
+            <p>Le {{ declaration.date_evenement.strftime("%d/%m/%Y à %Hh%M") }} - Durée : {{ declaration.duree_heures }} h</p>
+            <p>Capacité d'accueil : {{ declaration.capacite_accueil }} personnes - Entrée {{ "payante" if declaration.entree_payante else "gratuite" }}</p>
+            <p>Diffusion musicale : {{ declaration.nature_diffusion }}</p>
+            {% if declaration.autres_details %}
+            <p>Autres détails : {{ declaration.autres_details }}</p>
+            {% endif %}
+
+            {% if declaration.artistes %}
+            <h3>Artistes prévus</h3>
+            <ul>
+                {% for artiste in declaration.artistes %}
+                <li>{{ artiste.nom_artiste }}{% if artiste.discipline %} - {{ artiste.discipline }}{% endif %}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+
+            {% if declaration.commentaire_agent %}
+            <h3>Dernier commentaire agent</h3>
+            <p>{{ declaration.commentaire_agent }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="colonne-traitement">
+        <div class="bloc-agent">
+            <h2>Historique de {{ declaration.organisateur.utilisateur.prenom }} {{ declaration.organisateur.utilisateur.nom }}</h2>
+            <div class="resume-historique">
+                <span>{{ historique.total_declarations }} déclaration(s) passée(s)</span>
+                <span>Total payé : {{ "%.0f"|format(historique.total_paye) }} FCFA</span>
+                <span class="{{ 'arriere-actuel--positif' if historique.arriere_actuel > 0 else '' }}">
+                    Arriéré actuel : {{ "%.0f"|format(historique.arriere_actuel) }} FCFA
+                </span>
+            </div>
+            {% if historique.cinq_dernieres %}
+            <table class="tableau-declarations">
+                <thead>
+                    <tr><th>Nature</th><th>Statut</th><th>Date</th></tr>
+                </thead>
+                <tbody>
+                    {% for d in historique.cinq_dernieres %}
+                    {% set css, libelle = statuts_affichage[d.statut] %}
+                    <tr>
+                        <td>{{ d.nature_manifestation }}</td>
+                        <td><span class="badge badge--{{ css }}">{{ libelle }}</span></td>
+                        <td>{{ d.date_soumission.strftime("%d/%m/%Y") }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+        </div>
+
+        {% if soldee %}
+        <div class="bloc-agent">
+            <h2>Montant et paiement (verrouillés)</h2>
+            <p class="aide-champ">
+                Ce dossier est soldé : le montant ne peut plus être modifié, et aucun second
+                paiement ne peut être enregistré. La quittance et la notification ont déjà été envoyées.
+            </p>
+            {% if declaration.evaluation %}
+            <p class="total-montant-calcule">
+                Tarif {{ "%.0f"|format(declaration.evaluation.tarif) }} FCFA
+                + Redevance {{ "%.0f"|format(declaration.evaluation.redevance) }} FCFA
+                = Total {{ "%.0f"|format(declaration.evaluation.montant_total) }} FCFA
+            </p>
+            <p>Déjà encaissé : <strong>{{ "%.0f"|format(montant_deja_paye) }} FCFA</strong>
+                &nbsp;|&nbsp; Reste dû : <strong>{{ "%.0f"|format(reste_du) }} FCFA</strong></p>
+            {% endif %}
+            {% if declaration.paiements %}
+            <h3>Versements enregistrés</h3>
+            <ul>
+                {% for p in declaration.paiements %}
+                <li>
+                    {{ p.date_paiement.strftime("%d/%m/%Y %H:%M") }} —
+                    {{ "%.0f"|format(p.montant_chiffres) }} FCFA
+                    ({{ p.mode_paiement }}, {{ p.type_paiement }})
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+            {% if declaration.quittance %}
+            <p>Quittance n&deg; <strong>{{ declaration.quittance.numero_quittance }}</strong>
+                délivrée le {{ declaration.quittance.date_delivrance.strftime("%d/%m/%Y") }}.</p>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="bloc-agent">
+            <h2>Fixer le montant de la redevance</h2>
+            <form method="post" action="{{ url_for('agent.fixer_montant', declaration_id=declaration.id) }}">
+                <div class="ligne-deux-colonnes">
+                    <div class="champ-formulaire">
+                        <label for="tarif">Tarif (FCFA) <span class="obligatoire">*</span></label>
+                        <input type="number" id="tarif" name="tarif" min="0" step="1" value="{{ declaration.evaluation.tarif|int if declaration.evaluation else '' }}" required>
+                    </div>
+                    <div class="champ-formulaire">
+                        <label for="redevance">Redevance (FCFA) <span class="obligatoire">*</span></label>
+                        <input type="number" id="redevance" name="redevance" min="0" step="1" value="{{ declaration.evaluation.redevance|int if declaration.evaluation else '' }}" required>
+                    </div>
+                </div>
+                <p class="total-montant-calcule">Total : <span id="total-montant-calcule">0</span> FCFA</p>
+                <div class="champ-formulaire">
+                    <label for="commentaire-montant">Commentaire (optionnel)</label>
+                    <textarea id="commentaire-montant" name="commentaire" rows="2">{{ (declaration.evaluation.commentaire if declaration.evaluation else '') or '' }}</textarea>
+                </div>
+                <button type="submit" class="bouton-soumettre bouton-soumettre--auto">Valider et notifier l'organisateur</button>
+            </form>
+        </div>
+
+        <div class="bloc-agent">
+            <h2>Mettre en attente</h2>
+            <form method="post" action="{{ url_for('agent.mettre_en_attente', declaration_id=declaration.id) }}">
+                <div class="champ-formulaire">
+                    <label for="commentaire-attente">Commentaire <span class="obligatoire">*</span></label>
+                    <textarea id="commentaire-attente" name="commentaire" rows="2" required></textarea>
+                </div>
+                <button type="submit" class="bouton-annuler">Mettre en attente</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

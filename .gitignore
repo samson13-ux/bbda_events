@@ -1,0 +1,46 @@
+# Environnement Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Binaire ngrok local (telecharge pour le lien stable)
+tools/ngrok/
+
+# Secrets
+.env
+.public_url
+.flask_public.log
+.flask_public.err
+.flask_restart.log
+.flask_restart.err
+.tunnel.log
+.tunnel.out.log
+.tunnel.err.log
+flask_err.log
+flask_out.log
+.pytest_last.txt
+
+# Fichiers generes par l'application
+frontend/static/uploads/*
+!frontend/static/uploads/.gitkeep
+frontend/static/quittances/*
+!frontend/static/quittances/.gitkeep
+
+# Editeurs / OS / outils locaux
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+.claude/
+.git_staged_list.txt
+
+# Gros fichiers locaux non necessaires au deploiement
+*.pptx
+guide/_tmp.zip
+guide/_tmp_extract/
+guide/_extracted.txt
+
+# Base de donnees locale (si SQLite utilise en dev)
+*.sqlite3

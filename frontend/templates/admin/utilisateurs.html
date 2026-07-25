@@ -1,0 +1,122 @@
+{% extends "admin/base_admin.html" %}
+{% block titre %}BBDA Events : Utilisateurs{% endblock %}
+{% block contenu_admin %}
+<div class="entete-agent">
+    <h1>Gestion des utilisateurs</h1>
+</div>
+
+<div class="onglets-utilisateurs">
+    <button type="button" class="onglet-bouton actif" id="onglet-organisateurs-bouton" data-cible="onglet-organisateurs">Organisateurs ({{ organisateurs|length }})</button>
+    <button type="button" class="onglet-bouton" id="onglet-agents-bouton" data-cible="onglet-agents">Agents ({{ agents|length }})</button>
+</div>
+
+<div class="onglet-contenu" id="onglet-organisateurs">
+    {% if organisateurs %}
+    <table class="tableau-declarations">
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Email</th>
+                <th>Téléphone</th>
+                <th>Statut compte</th>
+                <th>Inscrit le</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for organisateur in organisateurs %}
+            <tr>
+                <td>{{ organisateur.utilisateur.prenom }} {{ organisateur.utilisateur.nom }}</td>
+                <td>{{ organisateur.utilisateur.email }}</td>
+                <td>{{ organisateur.telephone }}</td>
+                <td><span class="badge badge--{{ organisateur.statut_compte }}">{{ organisateur.statut_compte }}</span></td>
+                <td>{{ organisateur.utilisateur.date_inscription.strftime("%d/%m/%Y") }}</td>
+                <td>
+                    {% if organisateur.utilisateur.statut == "actif" %}
+                    <form method="post" action="{{ url_for('admin.desactiver_utilisateur', utilisateur_id=organisateur.utilisateur.id) }}">
+                        <button type="submit" class="bouton-annuler">Désactiver</button>
+                    </form>
+                    {% else %}
+                    <form method="post" action="{{ url_for('admin.activer_utilisateur', utilisateur_id=organisateur.utilisateur.id) }}">
+                        <button type="submit" class="bouton-soumettre bouton-soumettre--auto">Réactiver</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="message-vide">Aucun organisateur inscrit pour l'instant.</p>
+    {% endif %}
+</div>
+
+<div class="onglet-contenu" id="onglet-agents" style="display: none;">
+    <button type="button" class="bouton-soumettre bouton-soumettre--auto" id="bouton-afficher-formulaire-agent">+ Créer un compte agent</button>
+
+    <form method="post" action="{{ url_for('admin.nouvel_agent') }}" class="formulaire-nouvel-agent" id="formulaire-nouvel-agent" style="display: none;">
+        <div class="ligne-deux-colonnes">
+            <div class="champ-formulaire">
+                <label for="agent-nom">Nom <span class="obligatoire">*</span></label>
+                <input type="text" id="agent-nom" name="nom" required>
+            </div>
+            <div class="champ-formulaire">
+                <label for="agent-prenom">Prénom <span class="obligatoire">*</span></label>
+                <input type="text" id="agent-prenom" name="prenom" required>
+            </div>
+        </div>
+        <div class="champ-formulaire">
+            <label for="agent-email">Email <span class="obligatoire">*</span></label>
+            <input type="email" id="agent-email" name="email" required>
+        </div>
+        <div class="champ-formulaire">
+            <label for="agent-mot-de-passe">Mot de passe <span class="obligatoire">*</span></label>
+            <input type="password" id="agent-mot-de-passe" name="mot_de_passe" minlength="8" required>
+        </div>
+        <button type="submit" class="bouton-soumettre bouton-soumettre--auto">Créer le compte</button>
+    </form>
+
+    {% if agents %}
+    <table class="tableau-declarations">
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Email</th>
+                <th>Rôle</th>
+                <th>Statut</th>
+                <th>Inscrit le</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for agent in agents %}
+            <tr>
+                <td>{{ agent.prenom }} {{ agent.nom }}</td>
+                <td>{{ agent.email }}</td>
+                <td>{{ agent.role }}</td>
+                <td><span class="badge badge--{{ 'actif' if agent.statut == 'actif' else 'bloque' }}">{{ agent.statut }}</span></td>
+                <td>{{ agent.date_inscription.strftime("%d/%m/%Y") }}</td>
+                <td>
+                    {% if agent.id != current_user.id %}
+                        {% if agent.statut == "actif" %}
+                        <form method="post" action="{{ url_for('admin.desactiver_utilisateur', utilisateur_id=agent.id) }}">
+                            <button type="submit" class="bouton-annuler">Désactiver</button>
+                        </form>
+                        {% else %}
+                        <form method="post" action="{{ url_for('admin.activer_utilisateur', utilisateur_id=agent.id) }}">
+                            <button type="submit" class="bouton-soumettre bouton-soumettre--auto">Réactiver</button>
+                        </form>
+                        {% endif %}
+                    {% else %}
+                    <span class="message-vide">(vous)</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="message-vide">Aucun agent créé pour l'instant.</p>
+    {% endif %}
+</div>
+{% endblock %}

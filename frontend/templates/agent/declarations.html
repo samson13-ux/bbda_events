@@ -1,0 +1,46 @@
+{% extends "agent/base_agent.html" %}
+{% block titre %}BBDA Events : Déclarations{% endblock %}
+{% block contenu_agent %}
+<div class="entete-agent">
+    <h1>Déclarations{% if statut_filtre %} - {{ statuts_affichage[statut_filtre][1] }}{% endif %}</h1>
+    {% if statut_filtre %}
+    <a href="{{ url_for('agent.declarations') }}">Voir toutes les déclarations</a>
+    {% endif %}
+</div>
+
+{% if declarations %}
+<table class="tableau-declarations">
+    <thead>
+        <tr>
+            <th>Organisateur</th>
+            <th>Nature</th>
+            <th>Nom artiste/événement</th>
+            <th>Statut</th>
+            <th>Soumis le</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for declaration in declarations %}
+        {% set css, libelle = statuts_affichage[declaration.statut] %}
+        <tr>
+            <td>{{ declaration.organisateur.utilisateur.prenom }} {{ declaration.organisateur.utilisateur.nom }}</td>
+            <td>{{ declaration.nature_manifestation }}</td>
+            <td>{{ declaration.nom_artiste_evenement }}</td>
+            <td><span class="badge badge--{{ css }}">{{ libelle }}</span></td>
+            <td>{{ declaration.date_soumission.strftime("%d/%m/%Y") }}</td>
+            <td>
+                {% if declaration.statut in ("montant_fixe", "paiement_en_attente") %}
+                <a href="{{ url_for('agent.paiement', declaration_id=declaration.id) }}">Encaisser &rarr;</a>
+                {% else %}
+                <a href="{{ url_for('agent.traiter_declaration', declaration_id=declaration.id) }}">Voir</a>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="message-vide">Aucune déclaration ne correspond à ce filtre.</p>
+{% endif %}
+{% endblock %}

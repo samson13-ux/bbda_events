@@ -1,0 +1,48 @@
+{% extends "admin/base_admin.html" %}
+{% block titre %}BBDA Events : Espace administrateur{% endblock %}
+{% block contenu_admin %}
+<div class="entete-agent">
+    <h1>Tableau de bord - Bonjour {{ current_user.prenom }}</h1>
+</div>
+
+{% if alertes %}
+<div class="alerte-agent alerte-agent--surveillance">
+    <span>{{ alertes|length }} compte(s) sous surveillance reconnecté(s) - Action requise</span>
+    <a href="{{ url_for('agent.surveillance') }}">Voir</a>
+</div>
+{% endif %}
+
+<div class="cartes-statistiques">
+    <div class="carte-stat">
+        <span class="carte-stat__valeur">{{ statistiques.total_declarations }}</span>
+        <span class="carte-stat__libelle">Déclarations totales</span>
+    </div>
+    <div class="carte-stat">
+        <span class="carte-stat__valeur">{{ "%.0f"|format(statistiques.total_redevances) }}</span>
+        <span class="carte-stat__libelle">Redevances perçues (FCFA)</span>
+    </div>
+    <div class="carte-stat">
+        <span class="carte-stat__valeur">{{ "%.0f"|format(statistiques.arrieres_en_cours) }}</span>
+        <span class="carte-stat__libelle">Arriérés en cours (FCFA)</span>
+    </div>
+    <div class="carte-stat">
+        <span class="carte-stat__valeur">{{ statistiques.comptes_actifs }}</span>
+        <span class="carte-stat__libelle">Comptes actifs</span>
+    </div>
+</div>
+
+<div class="section-agent">
+    <h2>Déclarations par mois (6 derniers mois)</h2>
+    <div class="graphique-barres">
+        {% for mois in declarations_par_mois %}
+        <div class="graphique-barres__ligne">
+            <span class="graphique-barres__libelle">{{ mois.libelle }}</span>
+            <div class="graphique-barres__piste">
+                <div class="graphique-barres__barre" style="width: {{ mois.pourcentage }}%;"></div>
+            </div>
+            <span class="graphique-barres__valeur">{{ mois.valeur }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

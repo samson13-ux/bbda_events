@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block titre %}BBDA Events : Nouvelle déclaration{% endblock %}
+{% block contenu %}
+<div class="carte-formulaire carte-formulaire--large">
+    <h1 class="titre-formulaire">Nouvelle déclaration d'événement</h1>
+    <p class="sous-titre-section">Remplissez ce formulaire pour déclarer votre événement au BBDA.</p>
+
+    <form method="post" action="{{ url_for('declarations.nouvelle') }}" enctype="multipart/form-data" novalidate>
+
+        <div class="section-formulaire">
+            <h2>1. Identité du demandeur</h2>
+            <div class="ligne-deux-colonnes">
+                <div class="champ-formulaire">
+                    <label for="nom_demandeur">Nom du demandeur <span class="obligatoire">*</span></label>
+                    <input type="text" id="nom_demandeur" name="nom_demandeur" value="{{ donnees.nom_demandeur if donnees else '' }}" required>
+                </div>
+                <div class="champ-formulaire">
+                    <label for="prenom_demandeur">Prénom(s) du demandeur <span class="obligatoire">*</span></label>
+                    <input type="text" id="prenom_demandeur" name="prenom_demandeur" value="{{ donnees.prenom_demandeur if donnees else '' }}" required>
+                </div>
+            </div>
+
+            <div class="champ-formulaire">
+                <label>Qualité <span class="obligatoire">*</span></label>
+                <div class="groupe-radio">
+                    <label><input type="radio" name="qualite" value="Organisateur" {% if not donnees or donnees.qualite != "Autre" %}checked{% endif %}> Organisateur</label>
+                    <label><input type="radio" name="qualite" value="Autre" id="qualite_autre_radio" {% if donnees and donnees.qualite == "Autre" %}checked{% endif %}> Autre - précisez :</label>
+                </div>
+                <input type="text" id="qualite_autre" name="qualite_autre" class="champ-precision" placeholder="Précisez la qualité" value="{{ donnees.qualite_autre if donnees else '' }}">
+            </div>
+
+            <div class="ligne-deux-colonnes">
+                <div class="champ-formulaire">
+                    <label for="telephone">Numéro de téléphone <span class="obligatoire">*</span></label>
+                    <input type="tel" id="telephone" name="telephone" value="{{ donnees.telephone if donnees else '' }}" placeholder="70 00 00 00" required>
+                </div>
+                <div class="champ-formulaire">
+                    <label for="email">Adresse email <span class="obligatoire">*</span></label>
+                    <input type="email" id="email" name="email" value="{{ donnees.email if donnees else '' }}" placeholder="vous@exemple.bf" required>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-formulaire">
+            <h2>2. Caractéristiques de la manifestation</h2>
+            <div class="champ-formulaire">
+                <label for="nature_manifestation">Nature de la manifestation <span class="obligatoire">*</span></label>
+                <select id="nature_manifestation" name="nature_manifestation" required>
+                    <option value="">-- Choisissez --</option>
+                    {% for nature in ["Concert", "Festival", "Spectacle", "Gala", "Soirée culturelle", "Exposition", "Autre"] %}
+                    <option value="{{ nature }}" {% if donnees and donnees.nature_manifestation == nature %}selected{% endif %}>{{ nature }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="champ-formulaire">
+                <label for="nom_artiste_evenement">Nom de l'artiste ou de l'événement <span class="obligatoire">*</span></label>
+                <input type="text" id="nom_artiste_evenement" name="nom_artiste_evenement" value="{{ donnees.nom_artiste_evenement if donnees else '' }}" required>
+            </div>
+
+            <div class="ligne-deux-colonnes">
+                <div class="champ-formulaire">
+                    <label for="nom_salle">Nom de la salle / Lieu <span class="obligatoire">*</span></label>
+                    <input type="text" id="nom_salle" name="nom_salle" value="{{ donnees.nom_salle if donnees else '' }}" required>
+                </div>
+                <div class="champ-formulaire">
+                    <label for="adresse">Adresse / Secteur <span class="obligatoire">*</span></label>
+                    <input type="text" id="adresse" name="adresse" value="{{ donnees.adresse if donnees else '' }}" required>
+                </div>
+            </div>
+
+            <div class="ligne-deux-colonnes">
+                <div class="champ-formulaire">
+                    <label for="ville">Ville <span class="obligatoire">*</span></label>
+                    <input type="text" id="ville" name="ville" value="{{ donnees.ville if donnees else '' }}" required>
+                </div>
+                <div class="champ-formulaire">
+                    <label for="date_evenement">Date et heure de l'événement <span class="obligatoire">*</span></label>
+                    <input type="datetime-local" id="date_evenement" name="date_evenement" value="{{ donnees.date_evenement if donnees else '' }}" required>
+                </div>
+            </div>
+
+            <div class="ligne-deux-colonnes">
+                <div class="champ-formulaire">
+                    <label for="duree_heures">Durée prévue (heures) <span class="obligatoire">*</span></label>
+                    <input type="number" id="duree_heures" name="duree_heures" min="0.5" step="0.5" value="{{ donnees.duree_heures if donnees else '' }}" required>
+                </div>
+                <div class="champ-formulaire">
+                    <label for="capacite_accueil">Capacité d'accueil (personnes) <span class="obligatoire">*</span></label>
+                    <input type="number" id="capacite_accueil" name="capacite_accueil" min="1" step="1" value="{{ donnees.capacite_accueil if donnees else '' }}" required>
+                </div>
+            </div>
+
+            <div class="champ-formulaire">
+                <label>Entrée <span class="obligatoire">*</span></label>
+                <div class="groupe-radio">
+                    <label><input type="radio" name="entree" value="payante" {% if not donnees or donnees.entree == "payante" %}checked{% endif %}> Payante</label>
+                    <label><input type="radio" name="entree" value="gratuite" {% if donnees and donnees.entree == "gratuite" %}checked{% endif %}> Gratuite</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-formulaire">
+            <h2>3. Nature de la diffusion musicale</h2>
+            <p class="sous-titre-section">Sélectionnez au moins une option. <span class="obligatoire">*</span></p>
+            <div class="groupe-case">
+                {% set diffusions_cochees = donnees.getlist("nature_diffusion") if donnees else [] %}
+                <label><input type="checkbox" name="nature_diffusion" value="vivante" {% if "vivante" in diffusions_cochees %}checked{% endif %}> Musique vivante</label>
+                <label><input type="checkbox" name="nature_diffusion" value="mecanique" {% if "mecanique" in diffusions_cochees %}checked{% endif %}> Musique mécanique</label>
+                <label><input type="checkbox" name="nature_diffusion" value="autres" id="diffusion_autres_case" {% if "autres" in diffusions_cochees %}checked{% endif %}> Autres - précisez :</label>
+            </div>
+            <input type="text" id="nature_diffusion_autre" name="nature_diffusion_autre" class="champ-precision" placeholder="Précisez" value="{{ donnees.nature_diffusion_autre if donnees else '' }}">
+        </div>
+
+        <div class="section-formulaire">
+            <h2>4. Informations complémentaires</h2>
+            <div class="champ-formulaire">
+                <label for="autres_details">Autres détails (optionnel)</label>
+                <textarea id="autres_details" name="autres_details" rows="3">{{ donnees.autres_details if donnees else '' }}</textarea>
+            </div>
+
+            <div id="section-artistes" class="champ-formulaire">
+                <label>Liste des artistes prévus (optionnel)</label>
+                <div id="artistes-liste" class="artistes-liste">
+                    {% for nom, discipline in (artistes_soumis or []) %}
+                    <div class="artiste-ligne">
+                        <input type="text" name="artiste_nom" placeholder="Nom de l'artiste" value="{{ nom }}">
+                        <input type="text" name="artiste_discipline" placeholder="Discipline" value="{{ discipline }}">
+                        <button type="button" class="bouton-supprimer-artiste" aria-label="Supprimer cette ligne">&times;</button>
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="button" id="bouton-ajouter-artiste" class="bouton-ajouter-artiste">+ Ajouter un artiste</button>
+            </div>
+        </div>
+
+        <div class="section-formulaire">
+            <h2>5. Promotion publique</h2>
+            <p class="sous-titre-section">
+                L'événement ne sera visible sur la page publique qu'après paiement de la redevance
+                et délivrance de la quittance.
+            </p>
+            <div class="groupe-case">
+                <label>
+                    <input type="checkbox" name="promouvoir" id="promouvoir_case" {% if donnees and donnees.promouvoir %}checked{% endif %}>
+                    Je souhaite promouvoir cet événement sur la page publique BBDA Events
+                </label>
+            </div>
+            <div id="section-promotion" class="champs-promotion">
+                <div class="champ-formulaire">
+                    <label for="description_publique">Description publique de l'événement (optionnel)</label>
+                    <textarea id="description_publique" name="description_publique" rows="3">{{ donnees.description_publique if donnees else '' }}</textarea>
+                </div>
+                <div class="champ-formulaire">
+                    <label for="affiche">Affiche / Image de l'événement (JPG ou PNG, max 2 Mo, optionnel)</label>
+                    <input type="file" id="affiche" name="affiche" accept=".jpg,.jpeg,.png,image/jpeg,image/png">
+                    <p class="aide-champ" id="aide-affiche">Choisissez une image de 2 Mo maximum. Si le fichier est trop lourd, compressez-le avant l'envoi.</p>
+                </div>
+                <div class="groupe-case">
+                    <label>
+                        <input type="checkbox" name="contact_public" {% if donnees and donnees.contact_public %}checked{% endif %}>
+                        Autoriser l'affichage de mes coordonnées (téléphone / email) sur la page publique
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-formulaire">
+            <p class="mention-legale">
+                La présente déclaration est introduite en vue d'obtenir l'autorisation requise en application de
+                la législation en matière de droit d'auteur et de droits voisins. Toute fausse déclaration engage
+                la responsabilité de son auteur.
+            </p>
+
+            <div class="barre-boutons-formulaire">
+                <a class="bouton-annuler" href="{{ url_for('declarations.tableau_de_bord') }}">Annuler</a>
+                <button type="submit" class="bouton-soumettre bouton-soumettre--auto">Soumettre ma déclaration &rarr;</button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

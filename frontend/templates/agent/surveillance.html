@@ -1,0 +1,57 @@
+{% extends "agent/base_agent.html" %}
+{% block titre %}BBDA Events : Surveillance{% endblock %}
+{% block contenu_agent %}
+<div class="entete-agent">
+    <h1>Surveillance des comptes</h1>
+</div>
+
+{% if alertes %}
+<h2>Alertes récentes non traitées</h2>
+{% for alerte in alertes %}
+<div class="bloc-alerte-surveillance">
+    <span>
+        <strong>{{ alerte.organisateur.utilisateur.prenom }} {{ alerte.organisateur.utilisateur.nom }}</strong>
+        s'est reconnecté le {{ alerte.date_marquage.strftime("%d/%m/%Y") }} à {{ alerte.date_marquage.strftime("%Hh%M") }}
+    </span>
+    <form method="post" action="{{ url_for('agent.traiter_alerte', alerte_id=alerte.id) }}">
+        <button type="submit" class="bouton-annuler">Marquer comme traité</button>
+    </form>
+</div>
+{% endfor %}
+{% else %}
+<p class="message-vide">Aucune alerte de surveillance en attente.</p>
+{% endif %}
+
+<h2>Comptes actuellement sous surveillance</h2>
+{% if comptes_surveilles %}
+<table class="tableau-declarations">
+    <thead>
+        <tr>
+            <th>Organisateur</th>
+            <th>Marqué le</th>
+            <th>Par</th>
+            <th>Commentaire</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for organisateur in comptes_surveilles %}
+        {% set derniere_alerte = organisateur.alertes_surveillance|sort(attribute="date_marquage")|last %}
+        <tr>
+            <td>{{ organisateur.utilisateur.prenom }} {{ organisateur.utilisateur.nom }}</td>
+            <td>{{ derniere_alerte.date_marquage.strftime("%d/%m/%Y") if derniere_alerte else "-" }}</td>
+            <td>{{ derniere_alerte.agent_marqueur.prenom if derniere_alerte and derniere_alerte.agent_marqueur else "-" }}</td>
+            <td>{{ derniere_alerte.commentaire if derniere_alerte and derniere_alerte.commentaire else "-" }}</td>
+            <td>
+                <form method="post" action="{{ url_for('agent.lever_organisateur_surveillance', organisateur_id=organisateur.id) }}">
+                    <button type="submit" class="bouton-soumettre bouton-soumettre--auto">Lever la surveillance</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="message-vide">Aucun compte sous surveillance pour l'instant.</p>
+{% endif %}
+{% endblock %}

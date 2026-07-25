@@ -1,0 +1,46 @@
+{% extends "public/base_public.html" %}
+{% block titre %}BBDA Events : Support{% endblock %}
+{% block contenu %}
+<section class="bandeau-page">
+    <h1>Support</h1>
+    <p>Réponses aux questions fréquentes des organisateurs sur le processus de déclaration.</p>
+</section>
+
+<section class="section-publique">
+    <div class="faq-publique">
+        <details>
+            <summary>Comment déclarer un événement sur BBDA Events ?</summary>
+            <p>Créez un compte organisateur, connectez-vous, puis utilisez le bouton « Nouvelle déclaration ». Remplissez le formulaire inspiré des fiches papier du BBDA et soumettez-le.</p>
+        </details>
+        <details>
+            <summary>Quel est le délai de traitement d'une déclaration ?</summary>
+            <p>Un agent du BBDA examine votre dossier dans un délai indicatif de 72 heures. Vous recevez ensuite un email avec le montant de la redevance.</p>
+        </details>
+        <details>
+            <summary>Comment est calculée la redevance ?</summary>
+            <p>Le tarif et la redevance sont fixés manuellement par un agent BBDA selon la nature de la manifestation, la capacité et les informations fournies. Le total vous est notifié par email.</p>
+        </details>
+        <details>
+            <summary>Où et comment payer ?</summary>
+            <p>Le paiement s'effectue au guichet du BBDA (espèces, chèque ou Orange Money). L'agent confirme ensuite le paiement dans la plateforme et génère votre quittance PDF.</p>
+        </details>
+        <details>
+            <summary>Comment télécharger ma quittance ?</summary>
+            <p>Dès que le statut de votre déclaration passe à « Quittance disponible », un bouton de téléchargement apparaît dans le détail de la déclaration sur votre espace organisateur.</p>
+        </details>
+        <details>
+            <summary>Pourquoi mon compte est-il bloqué ?</summary>
+            <p>Un arriéré de paiement supérieur ou égal au seuil configuré (1 000 FCFA par défaut) bloque automatiquement toute nouvelle déclaration. Présentez-vous au BBDA pour régulariser.</p>
+        </details>
+        <details>
+            <summary>Comment faire apparaître mon événement sur la page publique ?</summary>
+            <p>Lors de la déclaration, cochez l'option de promotion publique (disponible avec le module promotion). L'événement ne devient visible qu'après délivrance de la quittance.</p>
+        </details>
+        <details>
+            <summary>Qui contacter en cas de difficulté ?</summary>
+            <p>Utilisez le formulaire de contact de la plateforme, ou joignez le BBDA au 25 32 47 50 - 01 BP 3926 Ouagadougou 01.</p>
+        </details>
+    </div>
+    <p class="section-publique__intro"><a class="bouton-public" href="{{ url_for('public.contact') }}">Contacter le BBDA</a></p>
+</section>
+{% endblock %}

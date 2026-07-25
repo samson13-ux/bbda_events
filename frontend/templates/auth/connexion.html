@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block titre %}BBDA Events : Connexion{% endblock %}
+{% block contenu %}
+<div class="carte-formulaire">
+    <h1 class="titre-formulaire">Se connecter</h1>
+
+    <form method="post" action="{{ url_for('auth.connexion') }}" novalidate>
+        <div class="champ-formulaire">
+            <label for="email">Email <span class="obligatoire">*</span></label>
+            <input type="email" id="email" name="email" placeholder="vous@exemple.bf" required autofocus>
+        </div>
+
+        <div class="champ-formulaire">
+            <label for="password">Mot de passe <span class="obligatoire">*</span></label>
+            <input type="password" id="password" name="password" placeholder="Votre mot de passe" required>
+        </div>
+
+        <label class="champ-case">
+            <input type="checkbox" name="remember" value="1">
+            <span>Rester connecté</span>
+        </label>
+
+        <button type="submit" class="bouton-soumettre bouton-soumettre--espace">Se connecter</button>
+    </form>
+
+    <p class="lien-secondaire">
+        Pas encore de compte ? <a href="{{ url_for('auth.inscription') }}">Créer un compte</a>
+    </p>
+</div>
+{% endblock %}

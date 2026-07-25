@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block titre %}BBDA Events{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header class="en-tete">
+        <nav class="barre-navigation">
+            <a class="marque" href="{{ url_for('public.accueil') }}">
+                <img src="{{ url_for('static', filename='img/bbda_logo.jpg') }}" alt="Logo BBDA" class="marque__logo">
+                <span>BBDA Events</span>
+            </a>
+            <div class="liens-navigation">
+                {% if current_user.is_authenticated %}
+                    <span class="salutation">Bonjour, {{ current_user.prenom }}</span>
+                    {% if current_user.role == "organisateur" %}
+                        <a href="{{ url_for('declarations.tableau_de_bord') }}">Mon espace</a>
+                    {% elif current_user.role == "agent" %}
+                        <a href="{{ url_for('agent.tableau_de_bord') }}">Mon espace</a>
+                    {% elif current_user.role == "admin" %}
+                        <a href="{{ url_for('admin.tableau_de_bord') }}">Mon espace</a>
+                    {% endif %}
+                    <a href="{{ url_for('auth.deconnexion') }}">Se déconnecter</a>
+                {% else %}
+                    <a href="{{ url_for('public.accueil') }}">Accueil</a>
+                    <a href="{{ url_for('auth.inscription') }}">Inscription</a>
+                    <a href="{{ url_for('auth.connexion') }}">Connexion</a>
+                {% endif %}
+            </div>
+        </nav>
+    </header>
+
+    <main class="contenu-principal">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="messages-flash">
+                    {% for categorie, message in messages %}
+                        <p class="message message--{{ categorie }}">
+                            <span>{{ message }}</span>
+                            <button type="button" class="message__fermer" aria-label="Fermer ce message">&times;</button>
+                        </p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block contenu %}{% endblock %}
+    </main>
+
+    <footer class="pied-de-page">
+        <p>BBDA Events : Bureau Burkinabè du Droit d'Auteur</p>
+        <p>Cet outil est un service numérique du BBDA.</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

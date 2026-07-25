@@ -1,0 +1,110 @@
+{% extends "agent/base_agent.html" %}
+{% block titre %}BBDA Events : Tableau de bord agent{% endblock %}
+{% block contenu_agent %}
+<div class="entete-agent">
+    <h1>Tableau de bord Agent - Bonjour {{ current_user.prenom }}</h1>
+    <span class="horloge-agent" id="horloge-agent"></span>
+</div>
+
+{% if alertes.surveillance_non_traitees > 0 %}
+<div class="alerte-agent alerte-agent--surveillance">
+    <span>{{ alertes.surveillance_non_traitees }} compte(s) sous surveillance reconnecté(s) - Action requise</span>
+    <a href="{{ url_for('agent.surveillance') }}">Voir</a>
+</div>
+{% endif %}
+
+{% if alertes.organisateurs_en_difficulte > 0 %}
+<div class="alerte-agent alerte-agent--arriere">
+    <span>{{ alertes.organisateurs_en_difficulte }} organisateur(s) avec arriéré non réglé</span>
+    <a href="{{ url_for('agent.arrieres') }}">Voir</a>
+</div>
+{% endif %}
+
+<div class="cartes-statistiques">
+    <a class="carte-stat" href="{{ url_for('agent.declarations', statut='nouvelle') }}">
+        <span class="carte-stat__valeur">{{ statistiques.nouvelles }}</span>
+        <span class="carte-stat__libelle">Nouvelles déclarations</span>
+    </a>
+    <div class="carte-stat">
+        <span class="carte-stat__valeur">{{ statistiques.en_cours }}</span>
+        <span class="carte-stat__libelle">En cours de traitement</span>
+    </div>
+    <div class="carte-stat">
+        <span class="carte-stat__valeur">{{ statistiques.payees_aujourdhui }}</span>
+        <span class="carte-stat__libelle">Payées aujourd'hui</span>
+    </div>
+    <div class="carte-stat">
+        <span class="carte-stat__valeur">{{ statistiques.quittances_ce_mois }}</span>
+        <span class="carte-stat__libelle">Quittances ce mois</span>
+    </div>
+</div>
+
+<div class="section-agent">
+    <h2>Déclarations à traiter en priorité</h2>
+    {% if declarations_nouvelles %}
+    <table class="tableau-declarations">
+        <thead>
+            <tr>
+                <th>Organisateur</th>
+                <th>Nature</th>
+                <th>Lieu</th>
+                <th>Date événement</th>
+                <th>Soumis le</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for declaration in declarations_nouvelles %}
+            <tr>
+                <td>{{ declaration.organisateur.utilisateur.prenom }} {{ declaration.organisateur.utilisateur.nom }}</td>
+                <td>{{ declaration.nature_manifestation }}</td>
+                <td>{{ declaration.nom_salle }}, {{ declaration.ville }}</td>
+                <td>{{ declaration.date_evenement.strftime("%d/%m/%Y") }}</td>
+                <td>{{ declaration.date_soumission.strftime("%d/%m/%Y") }}</td>
+                <td><a href="{{ url_for('agent.traiter_declaration', declaration_id=declaration.id) }}">Traiter &rarr;</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="message-vide">Aucune nouvelle déclaration en attente de traitement.</p>
+    {% endif %}
+</div>
+
+<div class="section-agent">
+    <h2>En cours de traitement</h2>
+    {% if declarations_en_cours %}
+    <table class="tableau-declarations">
+        <thead>
+            <tr>
+                <th>Organisateur</th>
+                <th>Nature</th>
+                <th>Statut</th>
+                <th>Soumis le</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for declaration in declarations_en_cours %}
+            {% set css, libelle = statuts_affichage[declaration.statut] %}
+            <tr>
+                <td>{{ declaration.organisateur.utilisateur.prenom }} {{ declaration.organisateur.utilisateur.nom }}</td>
+                <td>{{ declaration.nature_manifestation }}</td>
+                <td><span class="badge badge--{{ css }}">{{ libelle }}</span></td>
+                <td>{{ declaration.date_soumission.strftime("%d/%m/%Y") }}</td>
+                <td>
+                    {% if declaration.statut in ("montant_fixe", "paiement_en_attente") %}
+                    <a href="{{ url_for('agent.paiement', declaration_id=declaration.id) }}">Encaisser &rarr;</a>
+                    {% else %}
+                    <a href="{{ url_for('agent.traiter_declaration', declaration_id=declaration.id) }}">Voir</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="message-vide">Aucune déclaration en cours de traitement.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "public/base_public.html" %}
+{% block titre %}BBDA Events : Plateforme de déclaration et de promotion{% endblock %}
+{% block contenu %}
+<section class="heros-public">
+    <div class="heros-public__voile"></div>
+    <div class="heros-public__contenu">
+        <p class="heros-public__marque">
+            <img src="{{ url_for('static', filename='img/bbda_logo.jpg') }}" alt="Logo BBDA" class="heros-public__logo">
+            <span>BBDA Events</span>
+        </p>
+        <h1>Plateforme de déclaration et de promotion des événements culturels burkinabè</h1>
+        <p class="heros-public__accroche">Déclarez. Promouvez. Célébrez. Le BBDA, une clé pour l'épanouissement des créateurs.</p>
+        <div class="heros-public__actions">
+            <a class="bouton-public bouton-public--clair" href="{{ url_for('auth.inscription') }}">Déclarer mon événement</a>
+            <a class="bouton-public bouton-public--contour-clair" href="{{ url_for('public.evenements') }}">Découvrir les événements</a>
+        </div>
+    </div>
+</section>
+
+<section class="section-publique">
+    <h2>Qu'est-ce que BBDA Events ?</h2>
+    <p class="section-publique__intro">Un parcours simple pour déclarer un événement culturel occasionnel auprès du Bureau Burkinabè du Droit d'Auteur, obtenir votre quittance, et le rendre visible auprès du public.</p>
+    <ol class="parcours-public">
+        <li>
+            <span class="parcours-public__numero">1</span>
+            <h3>Déclarez</h3>
+            <p>Remplissez le formulaire en ligne avec les détails de votre manifestation.</p>
+        </li>
+        <li>
+            <span class="parcours-public__numero">2</span>
+            <h3>Recevez le montant</h3>
+            <p>Un agent du BBDA évalue votre dossier et vous notifie la redevance à payer.</p>
+        </li>
+        <li>
+            <span class="parcours-public__numero">3</span>
+            <h3>Payez et téléchargez</h3>
+            <p>Réglez au guichet BBDA, téléchargez votre quittance, et faites connaître votre événement.</p>
+        </li>
+    </ol>
+</section>
+
+<section class="section-publique section-publique--alternee">
+    <h2>Nos solutions</h2>
+    <p class="section-publique__intro">Une plateforme pour les organisateurs, le public et les services du BBDA.</p>
+    <div class="solutions-public">
+        <article>
+            <h3>Pour les organisateurs</h3>
+            <p>Déclaration en ligne, suivi du dossier, quittance numérique et option de promotion publique.</p>
+        </article>
+        <article>
+            <h3>Pour le public</h3>
+            <p>Découverte des événements culturels burkinabè autorisés et mis en avant par leurs organisateurs.</p>
+        </article>
+        <article>
+            <h3>Pour le BBDA</h3>
+            <p>Gestion centralisée des déclarations, suivi des redevances, arriérés et statistiques.</p>
+        </article>
+    </div>
+</section>
+
+<section class="section-publique">
+    <h2>À propos du BBDA</h2>
+    <p class="section-publique__intro">Le Bureau Burkinabè du Droit d'Auteur est l'institution publique chargée de la protection et de la gestion collective des droits d'auteur et des droits voisins au Burkina Faso. BBDA Events numérise le circuit des événements culturels occasionnels tout en renforçant la visibilité de la création burkinabè.</p>
+    <p class="coordonnees-bbda">01 BP 3926 Ouagadougou 01 - Tél. : 25 32 47 50</p>
+    <p><a href="{{ url_for('public.confidentialite') }}">Consulter les pages légales</a></p>
+</section>
+{% endblock %}

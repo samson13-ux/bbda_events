@@ -1,0 +1,68 @@
+{% extends "admin/base_admin.html" %}
+{% block titre %}BBDA Events : Messages de contact{% endblock %}
+{% block contenu_admin %}
+<div class="entete-agent">
+    <h1>Messages de contact</h1>
+    <p class="sous-titre-section">
+        Préoccupations reçues via le formulaire public. Une copie est aussi envoyée
+        à la boîte mail dédiée de l'application.
+        {% if non_traites %}
+        <strong>{{ non_traites }} non traité(s)</strong>
+        {% endif %}
+    </p>
+</div>
+
+<div class="barre-filtres">
+    <a class="{{ 'actif' if filtre == 'tous' else '' }}" href="{{ url_for('admin.messages_contact', filtre='tous') }}">Tous</a>
+    <a class="{{ 'actif' if filtre == 'non_traites' else '' }}" href="{{ url_for('admin.messages_contact', filtre='non_traites') }}">Non traités</a>
+    <a class="{{ 'actif' if filtre == 'traites' else '' }}" href="{{ url_for('admin.messages_contact', filtre='traites') }}">Traités</a>
+</div>
+
+{% if messages %}
+<table class="tableau-declarations">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Expéditeur</th>
+            <th>Sujet</th>
+            <th>Message</th>
+            <th>Statut</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for msg in messages %}
+        <tr class="{{ 'ligne-alerte' if not msg.traite else '' }}">
+            <td>{{ msg.date_envoi.strftime("%d/%m/%Y %Hh%M") }}</td>
+            <td>
+                {{ msg.nom }}<br>
+                <a href="mailto:{{ msg.email }}">{{ msg.email }}</a>
+            </td>
+            <td>{{ msg.sujet }}</td>
+            <td class="cellule-message-contact">{{ msg.message }}</td>
+            <td>
+                {% if msg.traite %}
+                <span class="badge badge--quittance">Traité</span>
+                {% else %}
+                <span class="badge badge--attente-agent">Non traité</span>
+                {% endif %}
+            </td>
+            <td>
+                {% if not msg.traite %}
+                <form method="post" action="{{ url_for('admin.traiter_message_contact', message_id=msg.id, filtre=filtre) }}">
+                    <button type="submit" class="bouton-soumettre">Marquer traité</button>
+                </form>
+                {% else %}
+                <form method="post" action="{{ url_for('admin.reouvrir_message_contact', message_id=msg.id, filtre=filtre) }}">
+                    <button type="submit" class="bouton-annuler">Remettre en non traité</button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="message-vide">Aucun message de contact pour ce filtre.</p>
+{% endif %}
+{% endblock %}

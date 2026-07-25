@@ -1,0 +1,61 @@
+{% extends "agent/base_agent.html" %}
+{% block titre %}BBDA Events : Arriérés{% endblock %}
+{% block contenu_agent %}
+<div class="entete-agent">
+    <h1>Organisateurs en difficulté</h1>
+    <form method="post" action="{{ url_for('agent.envoyer_rappels') }}">
+        <button type="submit" class="bouton-soumettre bouton-soumettre--auto">Envoyer rappels aux retardataires</button>
+    </form>
+</div>
+<p class="sous-titre-section">
+    Le seuil d'arriéré bloquant et le délai avant rappel sont paramétrables depuis l'espace administrateur
+    (par défaut : 1000 FCFA et 7 jours).
+</p>
+
+{% if lignes %}
+<table class="tableau-declarations">
+    <thead>
+        <tr>
+            <th>Organisateur</th>
+            <th>Téléphone</th>
+            <th>Montant dû</th>
+            <th>Statut</th>
+            <th>Dernier rappel</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ligne in lignes %}
+        {% set organisateur = ligne.organisateur %}
+        <tr>
+            <td>{{ organisateur.utilisateur.prenom }} {{ organisateur.utilisateur.nom }}</td>
+            <td>{{ organisateur.telephone }}</td>
+            <td class="{{ 'arriere-actuel--positif' if ligne.montant_du > 0 else '' }}">{{ "%.0f"|format(ligne.montant_du) }} FCFA</td>
+            <td><span class="badge badge--{{ organisateur.statut_compte }}">{{ organisateur.statut_compte }}</span></td>
+            <td>{{ ligne.dernier_rappel.strftime("%d/%m/%Y") if ligne.dernier_rappel else "Aucun" }}</td>
+            <td class="actions-arrieres">
+                {% if organisateur.statut_compte != "actif" %}
+                <form method="post" action="{{ url_for('agent.debloquer_organisateur', organisateur_id=organisateur.id) }}">
+                    <button type="submit" class="bouton-soumettre bouton-soumettre--auto">Débloquer</button>
+                </form>
+                {% endif %}
+                {% if organisateur.statut_compte != "bloque" %}
+                <form method="post" action="{{ url_for('agent.bloquer_organisateur', organisateur_id=organisateur.id) }}">
+                    <button type="submit" class="bouton-annuler">Bloquer</button>
+                </form>
+                {% endif %}
+                {% if organisateur.statut_compte != "surveillance" %}
+                <form method="post" action="{{ url_for('agent.marquer_organisateur_surveillance', organisateur_id=organisateur.id) }}" class="formulaire-surveillance">
+                    <input type="text" name="commentaire" placeholder="Motif (obligatoire)" required>
+                    <button type="submit" class="bouton-annuler">Marquer surveillance</button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="message-vide">Aucun organisateur en difficulté pour l'instant.</p>
+{% endif %}
+{% endblock %}

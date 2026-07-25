@@ -1,0 +1,15 @@
+{% extends "public/base_public.html" %}
+{% block titre %}BBDA Events : Billetterie bientôt disponible{% endblock %}
+{% block contenu %}
+<section class="bandeau-page">
+    <h1>Billetterie en ligne</h1>
+    <p>Fonctionnalité bientôt disponible</p>
+</section>
+<section class="section-publique">
+    <p class="section-publique__intro">
+        Le BBDA travaille à l'intégration d'un système de billetterie en ligne
+        (Orange Money, Moov Money). Cette fonctionnalité sera disponible prochainement.
+    </p>
+    <a class="bouton-public" href="{{ url_for('public.evenements') }}">&larr; Retour aux événements</a>
+</section>
+{% endblock %}

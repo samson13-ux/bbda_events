@@ -1,0 +1,91 @@
+"""Point d'entree de l'application BBDA Events (factory pattern Flask)."""
+
+import os
+
+from flask import Flask
+from werkzeug.middleware.proxy_fix import ProxyFix
+
+from config import config_by_name
+from extensions import db, login_manager, mail
+
+
+def create_app(env=None):
+    """Cree et configure l'instance Flask de l'application.
+
+    :param env: nom de l'environnement ('development' ou 'production').
+        Si non fourni, lu depuis la variable FLASK_ENV (defaut: development).
+    :return: instance Flask configuree, avec extensions et blueprints enregistres.
+    """
+    env = env or os.environ.get("FLASK_ENV", "development")
+
+    app = Flask(
+        __name__,
+        template_folder="frontend/templates",
+        static_folder="frontend/static",
+    )
+    app.config.from_object(config_by_name[env])
+
+    # Derriere un tunnel HTTPS (Cloudflare) ou un reverse-proxy : respecter
+    # le schema et le host publics pour les cookies et url_for(_external).
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+
+    db.init_app(app)
+    login_manager.init_app(app)
+    mail.init_app(app)
+
+    import models  # noqa: F401 — enregistre les modeles et le user_loader
+
+    os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+    os.makedirs(app.config["QUITTANCE_FOLDER"], exist_ok=True)
+
+    _register_blueprints(app)
+    _configurer_login_manager()
+    _configurer_gestion_erreurs(app)
+
+    return app
+
+
+def _configurer_login_manager():
+    """Configure la redirection Flask-Login pour les acces anonymes a une
+    route protegee (RM-002, RM-003)."""
+    login_manager.login_view = "auth.connexion"
+    login_manager.login_message = "Veuillez vous connecter pour accéder à cette page."
+    login_manager.login_message_category = "erreur"
+
+
+def _configurer_gestion_erreurs(app):
+    """Messages utilisateur pour les erreurs HTTP courantes."""
+    from flask import flash, redirect, request, url_for
+    from werkzeug.exceptions import RequestEntityTooLarge
+
+    @app.errorhandler(RequestEntityTooLarge)
+    def _fichier_trop_volumineux(_erreur):
+        """RM-023 : affiche trop lourde (> MAX_CONTENT_LENGTH, 2 Mo)."""
+        flash(
+            "Le fichier envoyé est trop volumineux. L'affiche doit être en JPG ou PNG "
+            "et ne pas dépasser 2 Mo. Compressez l'image puis réessayez.",
+            "erreur",
+        )
+        cible = request.referrer or url_for("declarations.nouvelle")
+        return redirect(cible)
+
+
+def _register_blueprints(app):
+    """Enregistre tous les blueprints Flask du projet sur l'application."""
+    from backend.admin import admin_bp
+    from backend.agent import agent_bp
+    from backend.auth import auth_bp
+    from backend.declarations import declarations_bp
+    from backend.exports import exports_bp
+    from backend.public import public_bp
+
+    app.register_blueprint(public_bp)
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(declarations_bp)
+    app.register_blueprint(agent_bp)
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(exports_bp)
+
+
+if __name__ == "__main__":
+    create_app().run()

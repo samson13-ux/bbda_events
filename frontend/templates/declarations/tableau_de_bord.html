@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block titre %}BBDA Events : Mon espace organisateur{% endblock %}
+{% block contenu %}
+<h1>Bonjour {{ current_user.prenom }} !</h1>
+
+{% if compte_bloque %}
+<div class="banniere-blocage">
+    Votre compte est bloqué. Arriéré : {{ "%.0f"|format(montant_arriere) }} FCFA.
+    Présentez-vous au bureau BBDA pour régulariser.
+</div>
+{% endif %}
+
+<div class="cartes-statistiques">
+    <div class="carte-stat">
+        <span class="carte-stat__valeur">{{ statistiques.total }}</span>
+        <span class="carte-stat__libelle">Total</span>
+    </div>
+    <div class="carte-stat">
+        <span class="carte-stat__valeur">{{ statistiques.nouvelles }}</span>
+        <span class="carte-stat__libelle">Nouvelles</span>
+    </div>
+    <div class="carte-stat">
+        <span class="carte-stat__valeur">{{ statistiques.en_cours }}</span>
+        <span class="carte-stat__libelle">En cours</span>
+    </div>
+    <div class="carte-stat">
+        <span class="carte-stat__valeur">{{ statistiques.quittances }}</span>
+        <span class="carte-stat__libelle">Quittances délivrées</span>
+    </div>
+</div>
+
+<div class="barre-actions">
+    {% if compte_bloque %}
+        <span class="bouton-principal bouton-principal--desactive" title="Compte bloqué">+ Nouvelle déclaration</span>
+    {% else %}
+        <a class="bouton-principal" href="{{ url_for('declarations.nouvelle') }}">+ Nouvelle déclaration</a>
+    {% endif %}
+</div>
+
+{% if declarations %}
+<table class="tableau-declarations">
+    <thead>
+        <tr>
+            <th>Nature</th>
+            <th>Nom artiste/événement</th>
+            <th>Date événement</th>
+            <th>Statut</th>
+            <th>Soumis le</th>
+            <th>Voir</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for declaration in declarations %}
+        {% set css, libelle = statuts_affichage[declaration.statut] %}
+        <tr>
+            <td>{{ declaration.nature_manifestation }}</td>
+            <td>{{ declaration.nom_artiste_evenement }}</td>
+            <td>{{ declaration.date_evenement.strftime("%d/%m/%Y") }}</td>
+            <td><span class="badge badge--{{ css }}">{{ libelle }}</span></td>
+            <td>{{ declaration.date_soumission.strftime("%d/%m/%Y") }}</td>
+            <td><a href="{{ url_for('declarations.detail', declaration_id=declaration.id) }}">Voir</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="message-vide">Aucune déclaration pour l'instant.</p>
+{% if not compte_bloque %}
+<a class="bouton-principal" href="{{ url_for('declarations.nouvelle') }}">+ Nouvelle déclaration</a>
+{% endif %}
+{% endif %}
+{% endblock %}
