@@ -50,10 +50,12 @@
             <td>
                 {% if not msg.traite %}
                 <form method="post" action="{{ url_for('admin.traiter_message_contact', message_id=msg.id, filtre=filtre) }}">
+                    {% include '_csrf.html' %}
                     <button type="submit" class="bouton-soumettre">Marquer traité</button>
                 </form>
                 {% else %}
                 <form method="post" action="{{ url_for('admin.reouvrir_message_contact', message_id=msg.id, filtre=filtre) }}">
+                    {% include '_csrf.html' %}
                     <button type="submit" class="bouton-annuler">Remettre en non traité</button>
                 </form>
                 {% endif %}

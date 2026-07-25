@@ -28,6 +28,11 @@ from . import declarations_bp
 
 COMPTES_BLOQUANTS = ("arriere", "bloque")
 EXTENSIONS_AFFICHE = {".jpg", ".jpeg", ".png"}
+# Signatures binaires (magic bytes) pour refuser les faux fichiers image.
+SIGNATURES_AFFICHE = (
+    (b"\xff\xd8\xff", ".jpg"),  # JPEG
+    (b"\x89PNG\r\n\x1a\n", ".png"),  # PNG
+)
 
 CHAMPS_DECLARATION_REQUIS = (
     ("nom_demandeur", "Le nom du demandeur"),
@@ -157,9 +162,17 @@ def _enregistrer_artistes(declaration_id, donnees):
             db.session.add(ListeArtiste(declaration_id=declaration_id, nom_artiste=nom.strip(), discipline=discipline.strip() or None))
 
 
+def _extension_depuis_contenu(debut_fichier):
+    """Retourne l'extension attendue selon les magic bytes, ou None."""
+    for signature, extension in SIGNATURES_AFFICHE:
+        if debut_fichier.startswith(signature):
+            return extension
+    return None
+
+
 def _valider_et_sauver_affiche(fichier):
     """Valide et enregistre une affiche uploadee (JPG/PNG, max 2 Mo via
-    MAX_CONTENT_LENGTH). Retourne le chemin relatif sous static/, ou None."""
+    MAX_CONTENT_LENGTH). Controle extension + contenu binaire (Partie 2)."""
     if fichier is None or not fichier.filename:
         return None
 
@@ -168,12 +181,26 @@ def _valider_et_sauver_affiche(fichier):
     if extension not in EXTENSIONS_AFFICHE:
         raise ValueError("L'affiche doit être une image JPG ou PNG.")
 
+    debut = fichier.stream.read(16)
+    fichier.stream.seek(0)
+    extension_contenu = _extension_depuis_contenu(debut)
+    if extension_contenu is None:
+        raise ValueError(
+            "Le fichier envoyé n'est pas une image JPG ou PNG valide "
+            "(contenu incompatible)."
+        )
+    # L'extension du nom doit coincider avec le type reel du fichier.
+    extension_declaree = ".jpg" if extension == ".jpeg" else extension
+    if extension_declaree != extension_contenu:
+        raise ValueError(
+            "L'extension du fichier ne correspond pas à son contenu réel."
+        )
+
     dossier = current_app.config["UPLOAD_FOLDER"]
     os.makedirs(dossier, exist_ok=True)
-    nom_fichier = f"affiche_{uuid.uuid4().hex}{extension}"
+    nom_fichier = f"affiche_{uuid.uuid4().hex}{extension_contenu}"
     chemin_absolu = os.path.join(dossier, nom_fichier)
     fichier.save(chemin_absolu)
-    # Chemin servi par url_for('static', filename=...)
     return f"uploads/{nom_fichier}"
 
 

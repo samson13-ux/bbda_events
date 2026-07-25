@@ -5,6 +5,7 @@
     <h1 class="titre-formulaire">Se connecter</h1>
 
     <form method="post" action="{{ url_for('auth.connexion') }}" novalidate>
+        {% include '_csrf.html' %}
         <div class="champ-formulaire">
             <label for="email">Email <span class="obligatoire">*</span></label>
             <input type="email" id="email" name="email" placeholder="vous@exemple.bf" required autofocus>

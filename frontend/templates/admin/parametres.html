@@ -7,6 +7,7 @@
 
 <div class="section-agent">
     <form method="post" action="{{ url_for('admin.parametres') }}">
+        {% include '_csrf.html' %}
         <div class="champ-formulaire">
             <label for="SEUIL_ARRIERE">Seuil d'arriéré (FCFA)</label>
             <input type="number" id="SEUIL_ARRIERE" name="SEUIL_ARRIERE" min="0" step="1" value="{{ seuil_arriere }}" required>

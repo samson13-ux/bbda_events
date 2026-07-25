@@ -4,6 +4,7 @@
 <div class="entete-agent">
     <h1>Organisateurs en difficulté</h1>
     <form method="post" action="{{ url_for('agent.envoyer_rappels') }}">
+        {% include '_csrf.html' %}
         <button type="submit" class="bouton-soumettre bouton-soumettre--auto">Envoyer rappels aux retardataires</button>
     </form>
 </div>
@@ -36,16 +37,19 @@
             <td class="actions-arrieres">
                 {% if organisateur.statut_compte != "actif" %}
                 <form method="post" action="{{ url_for('agent.debloquer_organisateur', organisateur_id=organisateur.id) }}">
+                    {% include '_csrf.html' %}
                     <button type="submit" class="bouton-soumettre bouton-soumettre--auto">Débloquer</button>
                 </form>
                 {% endif %}
                 {% if organisateur.statut_compte != "bloque" %}
                 <form method="post" action="{{ url_for('agent.bloquer_organisateur', organisateur_id=organisateur.id) }}">
+                    {% include '_csrf.html' %}
                     <button type="submit" class="bouton-annuler">Bloquer</button>
                 </form>
                 {% endif %}
                 {% if organisateur.statut_compte != "surveillance" %}
                 <form method="post" action="{{ url_for('agent.marquer_organisateur_surveillance', organisateur_id=organisateur.id) }}" class="formulaire-surveillance">
+                    {% include '_csrf.html' %}
                     <input type="text" name="commentaire" placeholder="Motif (obligatoire)" required>
                     <button type="submit" class="bouton-annuler">Marquer surveillance</button>
                 </form>

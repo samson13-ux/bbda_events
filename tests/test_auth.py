@@ -154,6 +154,23 @@ def test_deconnexion_puis_acces_refuse(app, client):
     assert "/auth/connexion" in reponse.headers["Location"]
 
 
+def test_csrf_protege_la_connexion_hors_tests():
+    """Partie 2 : sans jeton CSRF, un POST connexion est refuse."""
+    application = create_app("testing")
+    application.config["WTF_CSRF_ENABLED"] = True
+    with application.app_context():
+        db.create_all()
+        client_csrf = application.test_client()
+        reponse = client_csrf.post(
+            "/auth/connexion",
+            data={"email": "x@y.z", "password": "abc"},
+            follow_redirects=True,
+        )
+        page = reponse.get_data(as_text=True)
+        assert "Session de formulaire expirée" in page
+        db.drop_all()
+
+
 def test_production_refuse_secret_key_faible():
     """Partie 1 : une SECRET_KEY trop faible bloque le demarrage production."""
     import os

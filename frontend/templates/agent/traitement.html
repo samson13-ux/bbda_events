@@ -117,6 +117,7 @@
         <div class="bloc-agent">
             <h2>Fixer le montant de la redevance</h2>
             <form method="post" action="{{ url_for('agent.fixer_montant', declaration_id=declaration.id) }}">
+                {% include '_csrf.html' %}
                 <div class="ligne-deux-colonnes">
                     <div class="champ-formulaire">
                         <label for="tarif">Tarif (FCFA) <span class="obligatoire">*</span></label>
@@ -139,6 +140,7 @@
         <div class="bloc-agent">
             <h2>Mettre en attente</h2>
             <form method="post" action="{{ url_for('agent.mettre_en_attente', declaration_id=declaration.id) }}">
+                {% include '_csrf.html' %}
                 <div class="champ-formulaire">
                     <label for="commentaire-attente">Commentaire <span class="obligatoire">*</span></label>
                     <textarea id="commentaire-attente" name="commentaire" rows="2" required></textarea>

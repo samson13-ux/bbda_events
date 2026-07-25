@@ -66,6 +66,12 @@ Cela cree les tables + l'admin **uniquement si la base est vide**.
 5. Connecte-toi avec `admin@bbda.bf` + le nouveau mot de passe
 6. Optionnel : **Paramètres → Changer mon mot de passe**
 
+## Partie 2 — durcissement (deja dans le code)
+
+- CSRF sur tous les formulaires POST
+- Rate-limit : connexion (10/min), inscription (8/min), contact (5/min)
+- Uploads affiche : controle extension **et** contenu (magic bytes JPG/PNG)
+
 ## Checklist Partie 1 — avant les tests utilisateurs
 
 - [ ] `SECRET_KEY` long et unique (pas la valeur d'exemple)

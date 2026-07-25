@@ -9,6 +9,7 @@
         Vos déclarations déjà enregistrées restent conservées côté BBDA.
     </p>
     <form method="post" action="{{ url_for('auth.supprimer_compte') }}" style="margin-top: 1.5rem;">
+        {% include '_csrf.html' %}
         <div class="heros-public__actions">
             <a class="bouton-annuler" href="{{ url_for('auth.parametres') }}">Non, annuler</a>
             <button type="submit" name="confirmer" value="oui" class="bouton-soumettre" style="background: #8b2e2e;">

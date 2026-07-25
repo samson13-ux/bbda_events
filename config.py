@@ -26,14 +26,9 @@ class Config:
         _database_url += ("&" if "?" in _database_url else "?") + "sslmode=require"
     SQLALCHEMY_DATABASE_URI = _database_url or None
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    # Render + SSL Postgres : evite les connexions mortes / partagees entre workers
-    # (erreur frequente : "SSL error: decryption failed or bad record mac").
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        "pool_pre_ping": True,
-        "pool_recycle": 280,
-        "pool_size": 2,
-        "max_overflow": 1,
-    }
+    # Options pool Postgres/MySQL (pas SQLite tests). Voir ProductionConfig /
+    # DevelopmentConfig pour le durcissement Render SSL.
+    SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
 
     MAIL_SERVER = "smtp.gmail.com"
     MAIL_PORT = 587
@@ -51,11 +46,23 @@ class Config:
     # Exemple : https://xxxx.trycloudflare.com
     PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "").rstrip("/")
 
+    # Partie 2 securite : CSRF + rate-limit
+    WTF_CSRF_ENABLED = True
+    WTF_CSRF_TIME_LIMIT = 3600
+    RATELIMIT_ENABLED = True
+    RATELIMIT_STORAGE_URI = "memory://"
+
 
 class DevelopmentConfig(Config):
     """Configuration utilisee en developpement local."""
 
     DEBUG = True
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 280,
+        "pool_size": 5,
+        "max_overflow": 5,
+    }
 
 
 class ProductionConfig(Config):
@@ -69,6 +76,13 @@ class ProductionConfig(Config):
     REMEMBER_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     REMEMBER_COOKIE_SAMESITE = "Lax"
+    # Render + SSL Postgres : evite "decryption failed or bad record mac".
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 280,
+        "pool_size": 2,
+        "max_overflow": 1,
+    }
 
     @classmethod
     def valider_secret_key(cls):
@@ -86,7 +100,10 @@ class TestingConfig(Config):
 
     TESTING = True
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+    # SQLite StaticPool refuse pool_size / max_overflow.
+    SQLALCHEMY_ENGINE_OPTIONS = {}
     WTF_CSRF_ENABLED = False
+    RATELIMIT_ENABLED = False
     # Empeche Flask-Mail de tenter un envoi SMTP reel pendant les tests
     # automatises (pas d'acces reseau garanti, et pas souhaitable).
     MAIL_SUPPRESS_SEND = True

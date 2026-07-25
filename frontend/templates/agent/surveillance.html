@@ -14,6 +14,7 @@
         s'est reconnecté le {{ alerte.date_marquage.strftime("%d/%m/%Y") }} à {{ alerte.date_marquage.strftime("%Hh%M") }}
     </span>
     <form method="post" action="{{ url_for('agent.traiter_alerte', alerte_id=alerte.id) }}">
+        {% include '_csrf.html' %}
         <button type="submit" class="bouton-annuler">Marquer comme traité</button>
     </form>
 </div>
@@ -44,6 +45,7 @@
             <td>{{ derniere_alerte.commentaire if derniere_alerte and derniere_alerte.commentaire else "-" }}</td>
             <td>
                 <form method="post" action="{{ url_for('agent.lever_organisateur_surveillance', organisateur_id=organisateur.id) }}">
+                    {% include '_csrf.html' %}
                     <button type="submit" class="bouton-soumettre bouton-soumettre--auto">Lever la surveillance</button>
                 </form>
             </td>

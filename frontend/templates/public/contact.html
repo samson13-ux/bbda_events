@@ -8,6 +8,7 @@
 
 <section class="section-publique contact-publique">
     <form method="post" action="{{ url_for('public.contact') }}" class="formulaire-contact">
+        {% include '_csrf.html' %}
         <div class="champ-formulaire">
             <label for="nom">Nom <span class="obligatoire">*</span></label>
             <input type="text" id="nom" name="nom" value="{{ donnees.nom if donnees else '' }}" required>

@@ -6,6 +6,7 @@
     <p class="sous-titre-section">Remplissez ce formulaire pour déclarer votre événement au BBDA.</p>
 
     <form method="post" action="{{ url_for('declarations.nouvelle') }}" enctype="multipart/form-data" novalidate>
+        {% include '_csrf.html' %}
 
         <div class="section-formulaire">
             <h2>1. Identité du demandeur</h2>

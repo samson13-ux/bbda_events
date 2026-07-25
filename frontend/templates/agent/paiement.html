@@ -25,6 +25,7 @@
 <div class="bloc-agent">
     <h2>Formulaire de confirmation</h2>
     <form method="post" action="{{ url_for('agent.confirmer_paiement', declaration_id=declaration.id) }}" id="formulaire-confirmation-paiement">
+        {% include '_csrf.html' %}
         <div class="champ-formulaire">
             <label>Mode de paiement <span class="obligatoire">*</span></label>
             <div class="groupe-radio">

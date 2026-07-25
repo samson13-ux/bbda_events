@@ -12,7 +12,7 @@ from flask import current_app, flash, redirect, render_template, request, url_fo
 from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy.exc import OperationalError, ProgrammingError
 
-from extensions import db
+from extensions import db, limiter
 from models import Organisateur, Utilisateur
 
 from backend.arrieres.moteur import verifier_connexion_surveillance
@@ -75,6 +75,7 @@ def _valider_inscription(donnees):
 
 
 @auth_bp.route("/inscription", methods=["GET", "POST"])
+@limiter.limit("8 per minute")
 def inscription():
     """Cree un compte organisateur (seul role ouvert a l'auto-inscription,
     RM-002 : agent et admin sont crees par l'administration, pas via ce
@@ -134,6 +135,7 @@ def _signaler_reconnexion_surveillance(utilisateur):
 
 
 @auth_bp.route("/connexion", methods=["GET", "POST"])
+@limiter.limit("10 per minute")
 def connexion():
     """Authentifie un utilisateur (organisateur, agent ou admin) et le
     redirige vers son espace personnel selon son role."""

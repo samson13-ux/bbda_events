@@ -12,7 +12,7 @@ from sqlalchemy import or_
 from sqlalchemy.exc import OperationalError, ProgrammingError
 
 from backend.notifications.email_service import notifier_message_contact
-from extensions import db
+from extensions import db, limiter
 from models import Declaration, MessageContact
 
 from . import public_bp
@@ -141,6 +141,7 @@ def support():
 
 
 @public_bp.route("/contact", methods=["GET", "POST"])
+@limiter.limit("5 per minute")
 def contact():
     """Formulaire de contact : enregistre un MessageContact en base."""
     if request.method == "POST":

@@ -216,6 +216,28 @@ def test_soumission_affiche_extension_invalide_rejetee(app, client):
         assert Declaration.query.count() == 0
 
 
+def test_soumission_affiche_contenu_non_image_rejetee(app, client):
+    """Partie 2 : un PDF renomme en .jpg est refuse (magic bytes)."""
+    from io import BytesIO
+
+    creer_organisateur(app, "orga7b@example.com")
+    connecter(client, "orga7b@example.com")
+    donnees = dict(DONNEES_BASE, date_evenement=_date_future())
+    donnees["email"] = "orga7b@example.com"
+    donnees["promouvoir"] = "on"
+    donnees["affiche"] = (BytesIO(b"%PDF-1.4 faux"), "affiche.jpg")
+
+    reponse = client.post(
+        "/declarations/nouvelle",
+        data=donnees,
+        content_type="multipart/form-data",
+    )
+
+    assert reponse.status_code == 400
+    with app.app_context():
+        assert Declaration.query.filter_by(email="orga7b@example.com").count() == 0
+
+
 def test_fichier_trop_volumineux_affiche_message_clair(app, client):
     """RM-023 : un envoi > 2 Mo renvoie un message francais (pas l'erreur brute)."""
     creer_organisateur(app, "orga8@example.com")

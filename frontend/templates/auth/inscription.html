@@ -5,6 +5,7 @@
     <h1 class="titre-formulaire">Créer un compte organisateur</h1>
 
     <form method="post" action="{{ url_for('auth.inscription') }}" novalidate>
+        {% include '_csrf.html' %}
         <div class="ligne-deux-colonnes">
             <div class="champ-formulaire">
                 <label for="nom">Nom <span class="obligatoire">*</span></label>

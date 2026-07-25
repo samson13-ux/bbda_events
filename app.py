@@ -6,7 +6,7 @@ from flask import Flask
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from config import ProductionConfig, config_by_name
-from extensions import db, login_manager, mail
+from extensions import csrf, db, limiter, login_manager, mail
 
 
 def create_app(env=None):
@@ -38,6 +38,8 @@ def create_app(env=None):
     db.init_app(app)
     login_manager.init_app(app)
     mail.init_app(app)
+    csrf.init_app(app)
+    limiter.init_app(app)
 
     import models  # noqa: F401 — enregistre les modeles et le user_loader
 
@@ -101,6 +103,7 @@ def _configurer_login_manager():
 def _configurer_gestion_erreurs(app):
     """Messages utilisateur pour les erreurs HTTP courantes."""
     from flask import flash, redirect, request, url_for
+    from flask_wtf.csrf import CSRFError
     from werkzeug.exceptions import RequestEntityTooLarge
 
     @app.errorhandler(RequestEntityTooLarge)
@@ -113,6 +116,24 @@ def _configurer_gestion_erreurs(app):
         )
         cible = request.referrer or url_for("declarations.nouvelle")
         return redirect(cible)
+
+    @app.errorhandler(CSRFError)
+    def _csrf_invalide(_erreur):
+        flash(
+            "Session de formulaire expirée ou invalide. Rechargez la page puis réessayez.",
+            "erreur",
+        )
+        cible = request.referrer or url_for("public.accueil")
+        return redirect(cible)
+
+    @app.errorhandler(429)
+    def _trop_de_requetes(_erreur):
+        flash(
+            "Trop de tentatives. Attendez une minute puis réessayez.",
+            "erreur",
+        )
+        cible = request.referrer or url_for("public.accueil")
+        return redirect(cible), 429
 
 
 def _register_blueprints(app):

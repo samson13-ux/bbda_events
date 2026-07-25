@@ -34,10 +34,12 @@
                 <td>
                     {% if organisateur.utilisateur.statut == "actif" %}
                     <form method="post" action="{{ url_for('admin.desactiver_utilisateur', utilisateur_id=organisateur.utilisateur.id) }}">
+                        {% include '_csrf.html' %}
                         <button type="submit" class="bouton-annuler">Désactiver</button>
                     </form>
                     {% else %}
                     <form method="post" action="{{ url_for('admin.activer_utilisateur', utilisateur_id=organisateur.utilisateur.id) }}">
+                        {% include '_csrf.html' %}
                         <button type="submit" class="bouton-soumettre bouton-soumettre--auto">Réactiver</button>
                     </form>
                     {% endif %}
@@ -55,6 +57,7 @@
     <button type="button" class="bouton-soumettre bouton-soumettre--auto" id="bouton-afficher-formulaire-agent">+ Créer un compte agent</button>
 
     <form method="post" action="{{ url_for('admin.nouvel_agent') }}" class="formulaire-nouvel-agent" id="formulaire-nouvel-agent" style="display: none;">
+        {% include '_csrf.html' %}
         <div class="ligne-deux-colonnes">
             <div class="champ-formulaire">
                 <label for="agent-nom">Nom <span class="obligatoire">*</span></label>
@@ -100,10 +103,12 @@
                     {% if agent.id != current_user.id %}
                         {% if agent.statut == "actif" %}
                         <form method="post" action="{{ url_for('admin.desactiver_utilisateur', utilisateur_id=agent.id) }}">
+                            {% include '_csrf.html' %}
                             <button type="submit" class="bouton-annuler">Désactiver</button>
                         </form>
                         {% else %}
                         <form method="post" action="{{ url_for('admin.activer_utilisateur', utilisateur_id=agent.id) }}">
+                            {% include '_csrf.html' %}
                             <button type="submit" class="bouton-soumettre bouton-soumettre--auto">Réactiver</button>
                         </form>
                         {% endif %}
