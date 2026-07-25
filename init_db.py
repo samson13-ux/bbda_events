@@ -457,9 +457,21 @@ def main():
     """Point d'entree du script : cree les tables, seed si necessaire."""
     reset = "--reset" in sys.argv
     vide = "--vide" in sys.argv
+    # --bootstrap : pour Render (sans Shell payant). Cree les tables + 1 admin
+    # si la base est vide. Ne supprime jamais les donnees existantes.
+    bootstrap = "--bootstrap" in sys.argv
     app = create_app()
 
     with app.app_context():
+        if bootstrap:
+            db.create_all()
+            if Utilisateur.query.first() is None:
+                print("Bootstrap : base vide, creation admin uniquement...")
+                seed_base_vide()
+            else:
+                print("Bootstrap : base deja initialisee, rien a faire.")
+            return
+
         if reset or vide:
             mode = "vide (sans donnees de demo)" if vide else "reset + seed complet"
             print(f"Option --{'vide' if vide else 'reset'} : suppression puis recreation ({mode})...")

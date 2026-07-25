@@ -46,14 +46,15 @@ Si besoin, remplace le debut :
 
 ## Etape 4 — Premier demarrage + admin
 
-Apres le premier deploy OK :
-
-1. Render → ton service → **Shell**
-2. Lance :
+Le **Shell Render est payant** sur le plan gratuit.  
+Le `Procfile` lance automatiquement au demarrage :
 
 ```bash
-python init_db.py --vide
+python init_db.py --bootstrap
 ```
+
+Cela cree les tables + l'admin **uniquement si la base est vide**  
+(ne detruit pas les donnees aux redeploiements suivants).
 
 Admin : `admin@bbda.bf` / `password123`
 
