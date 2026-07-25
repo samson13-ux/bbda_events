@@ -207,9 +207,12 @@ def fixer_montant(declaration_id):
     evaluation.date_evaluation = datetime.utcnow()
 
     declaration.statut = "montant_fixe"
-    db.session.flush()
-    notifier_montant_fixe(declaration)
     db.session.commit()
+    try:
+        notifier_montant_fixe(declaration)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
     flash("Montant fixé et organisateur notifié.", "succes")
     return redirect(url_for("agent.tableau_de_bord"))
@@ -425,11 +428,14 @@ def confirmer_paiement(declaration_id):
     if reste_a_payer > 0:
         creer_arriere(declaration.id, reste_a_payer)
 
-    db.session.flush()
-    notifier_quittance_disponible(declaration)
-    if declaration.promouvoir:
-        notifier_evenement_publie(declaration)
     db.session.commit()
+    try:
+        notifier_quittance_disponible(declaration)
+        if declaration.promouvoir:
+            notifier_evenement_publie(declaration)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
     flash("Paiement confirmé et quittance générée. La notification a été envoyée à l'organisateur.", "succes")
     return redirect(url_for("agent.tableau_de_bord"))
