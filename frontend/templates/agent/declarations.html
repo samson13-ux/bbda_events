@@ -8,6 +8,17 @@
     {% endif %}
 </div>
 
+<form class="filtres-evenements" method="get" action="{{ url_for('agent.declarations') }}">
+    {% if statut_filtre %}
+    <input type="hidden" name="statut" value="{{ statut_filtre }}">
+    {% endif %}
+    <div class="champ-formulaire">
+        <label for="recherche">Recherche</label>
+        <input type="search" id="recherche" name="recherche" value="{{ recherche or '' }}" placeholder="Organisateur, événement, ville…">
+    </div>
+    <button type="submit" class="bouton-public">Filtrer</button>
+</form>
+
 {% if declarations %}
 <table class="tableau-declarations">
     <thead>
@@ -40,6 +51,19 @@
         {% endfor %}
     </tbody>
 </table>
+
+{% if pagination and pagination.pages > 1 %}
+<nav class="pagination-agent" aria-label="Pagination">
+    {% if pagination.has_prev %}
+    <a href="{{ url_for('agent.declarations', page=pagination.prev_num, statut=statut_filtre or None, recherche=recherche or None) }}">← Précédent</a>
+    {% endif %}
+    <span>Page {{ pagination.page }} / {{ pagination.pages }}</span>
+    {% if pagination.has_next %}
+    <a href="{{ url_for('agent.declarations', page=pagination.next_num, statut=statut_filtre or None, recherche=recherche or None) }}">Suivant →</a>
+    {% endif %}
+</nav>
+{% endif %}
+
 {% else %}
 <p class="message-vide">Aucune déclaration ne correspond à ce filtre.</p>
 {% endif %}

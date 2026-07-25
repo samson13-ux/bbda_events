@@ -80,12 +80,16 @@
             {% endif %}
         </div>
 
-        {% if soldee %}
+        {% if soldee or montant_verrouille %}
         <div class="bloc-agent">
-            <h2>Montant et paiement (verrouillés)</h2>
+            <h2>{% if soldee %}Montant et paiement (soldés){% else %}Montant fixé — versements en cours{% endif %}</h2>
             <p class="aide-champ">
-                Ce dossier est soldé : le montant ne peut plus être modifié, et aucun second
-                paiement ne peut être enregistré. La quittance et la notification ont déjà été envoyées.
+                {% if soldee %}
+                Ce dossier est soldé : le montant ne peut plus être modifié. La quittance a été délivrée.
+                {% else %}
+                Un ou plusieurs versements sont déjà enregistrés : le montant ne peut plus être modifié.
+                Vous pouvez encore encaisser le reste dû jusqu’à solde complet (la quittance sera alors générée).
+                {% endif %}
             </p>
             {% if declaration.evaluation %}
             <p class="total-montant-calcule">

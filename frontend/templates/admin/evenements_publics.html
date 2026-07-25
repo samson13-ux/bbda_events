@@ -1,0 +1,45 @@
+{% extends "admin/base_admin.html" %}
+{% block titre %}BBDA Events : Événements publics{% endblock %}
+{% block contenu_admin %}
+<div class="entete-agent">
+    <h1>Événements publics</h1>
+    <p class="aide-champ">Événements visibles sur le site (quittance délivrée + promotion). Dépublication = RM-092.</p>
+</div>
+
+{% if evenements %}
+<table class="tableau-declarations">
+    <thead>
+        <tr>
+            <th>Événement</th>
+            <th>Date</th>
+            <th>Ville</th>
+            <th>Organisateur</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for evenement in evenements %}
+        <tr>
+            <td>
+                <a href="{{ url_for('public.detail_evenement', declaration_id=evenement.id) }}" target="_blank" rel="noopener">
+                    {{ evenement.nom_artiste_evenement }}
+                </a>
+                <br><span class="aide-champ">{{ evenement.nature_manifestation }}</span>
+            </td>
+            <td>{{ evenement.date_evenement.strftime("%d/%m/%Y") }}</td>
+            <td>{{ evenement.ville }}</td>
+            <td>{{ evenement.organisateur.utilisateur.prenom }} {{ evenement.organisateur.utilisateur.nom }}</td>
+            <td>
+                <form method="post" action="{{ url_for('admin.depublier_evenement', declaration_id=evenement.id) }}" onsubmit="return confirm('Dépublier cet événement du site public ?');">
+                    {% include '_csrf.html' %}
+                    <button type="submit" class="bouton-annuler">Dépublier</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="message-vide">Aucun événement actuellement publié.</p>
+{% endif %}
+{% endblock %}

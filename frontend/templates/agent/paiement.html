@@ -66,8 +66,11 @@
             <p class="aide-champ">Montant perçu + reste à payer doit égaler {{ "%.0f"|format(reste_du) }} FCFA.</p>
         </div>
 
-        <button type="submit" id="bouton-confirmer-paiement" class="bouton-soumettre bouton-soumettre--auto">Confirmer le paiement et générer la quittance</button>
-        <p class="aide-champ">Ne cliquez qu'une seule fois : le bouton se désactive pendant le traitement. Après validation, ce dossier sera verrouillé.</p>
+        <button type="submit" id="bouton-confirmer-paiement" class="bouton-soumettre bouton-soumettre--auto">Confirmer ce versement</button>
+        <p class="aide-champ">
+            Ne cliquez qu’une seule fois. La quittance n’est générée que lorsque le reste dû atteint zéro
+            (paiement intégral ou dernier versement).
+        </p>
     </form>
 </div>
 {% endblock %}

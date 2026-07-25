@@ -260,8 +260,7 @@ def test_formulaire_paiement_refuse_si_deja_quittance(app, client):
 
 
 def test_paiement_partiel_cree_un_arriere(app, client):
-    """RM-044 : un paiement partiel cree automatiquement un arriere avec
-    une echeance a 7 jours."""
+    """RM-044/047/048 : paiement partiel cree un arriere, pas de quittance."""
     creer_agent(app)
     declaration_id = creer_declaration_avec_montant(app)
     connecter(client, "agent@bbda.bf")
@@ -280,11 +279,48 @@ def test_paiement_partiel_cree_un_arriere(app, client):
 
     with app.app_context():
         declaration = Declaration.query.get(declaration_id)
-        assert declaration.statut == "quittance_delivree"
+        assert declaration.statut == "paiement_en_attente"
+        assert Quittance.query.filter_by(declaration_id=declaration_id).first() is None
         arriere = Arriere.query.filter_by(declaration_id=declaration_id).first()
         assert arriere is not None
         assert arriere.montant_du == 10000
         assert (arriere.date_echeance - datetime.utcnow()).days in (6, 7)
+
+
+def test_second_versement_genere_la_quittance(app, client):
+    """RM-047/048 : le solde a zero declenche la quittance."""
+    creer_agent(app)
+    declaration_id = creer_declaration_avec_montant(app)
+    connecter(client, "agent@bbda.bf")
+
+    client.post(
+        f"/agent/declarations/{declaration_id}/confirmer-paiement",
+        data={
+            "mode_paiement": "especes",
+            "montant_chiffres": "10000",
+            "montant_lettres": "Dix mille",
+            "type_paiement": "partiel",
+            "reste_a_payer": "10000",
+        },
+    )
+    client.post(
+        f"/agent/declarations/{declaration_id}/confirmer-paiement",
+        data={
+            "mode_paiement": "especes",
+            "montant_chiffres": "10000",
+            "montant_lettres": "Dix mille",
+            "type_paiement": "integral",
+        },
+    )
+
+    with app.app_context():
+        declaration = Declaration.query.get(declaration_id)
+        assert declaration.statut == "quittance_delivree"
+        assert Quittance.query.filter_by(declaration_id=declaration_id).first() is not None
+        assert Paiement.query.filter_by(declaration_id=declaration_id).count() == 2
+        arriere = Arriere.query.filter_by(declaration_id=declaration_id).first()
+        assert arriere is not None
+        assert arriere.statut == "regle"
 
 
 def test_paiement_cheque_sans_numero_rejete(app, client):

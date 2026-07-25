@@ -7,7 +7,9 @@ import pytest
 
 from app import create_app
 from extensions import db
-from models import MessageContact, Organisateur, ParametresSysteme, Utilisateur
+from datetime import datetime, timedelta
+
+from models import Declaration, MessageContact, Organisateur, ParametresSysteme, Utilisateur
 
 from backend.arrieres.moteur import seuil_arriere
 
@@ -217,3 +219,57 @@ def test_admin_voit_et_traite_les_messages_contact(app, client):
         assert MessageContact.query.get(message_id).traite is True
     page = client.get("/admin/messages-contact?filtre=traites").get_data(as_text=True)
     assert "Traité" in page
+
+
+def test_admin_peut_depublier_un_evenement_public(app, client):
+    """RM-092 : l'admin retire un evenement du listing public."""
+    creer_admin(app)
+    with app.app_context():
+        hachage = bcrypt.hashpw(b"password123", bcrypt.gensalt()).decode("utf-8")
+        utilisateur = Utilisateur(
+            nom="Zongo", prenom="Amina", email="orga_pub@example.com", mot_de_passe=hachage, role="organisateur"
+        )
+        db.session.add(utilisateur)
+        db.session.flush()
+        organisateur = Organisateur(
+            utilisateur_id=utilisateur.id, qualite="Organisateur", telephone="70000099"
+        )
+        db.session.add(organisateur)
+        db.session.flush()
+        declaration = Declaration(
+            organisateur_id=organisateur.id,
+            nom_demandeur="Zongo",
+            prenom_demandeur="Amina",
+            qualite_demandeur="Organisateur",
+            telephone="70000099",
+            email="orga_pub@example.com",
+            nature_manifestation="Concert",
+            nom_artiste_evenement="Concert Admin Test",
+            nom_salle="Salle",
+            adresse="Adresse",
+            ville="Ouagadougou",
+            date_evenement=datetime.utcnow() + timedelta(days=10),
+            duree_heures=2,
+            capacite_accueil=100,
+            nature_diffusion="Musique vivante",
+            promouvoir=True,
+            statut="quittance_delivree",
+        )
+        db.session.add(declaration)
+        db.session.commit()
+        declaration_id = declaration.id
+
+    connecter(client, "admin_p16@bbda.bf")
+    assert "Concert Admin Test" in client.get("/evenements").get_data(as_text=True)
+
+    reponse = client.post(
+        f"/admin/evenements-publics/{declaration_id}/depublier",
+        follow_redirects=False,
+    )
+    assert reponse.status_code == 302
+
+    page_evenements = client.get("/evenements").get_data(as_text=True)
+    assert "Aucun événement à venir" in page_evenements
+    assert 'carte-evenement' not in page_evenements
+    with app.app_context():
+        assert Declaration.query.get(declaration_id).promouvoir is False

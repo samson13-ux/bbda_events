@@ -19,7 +19,7 @@ from datetime import datetime
 
 from flask import flash, redirect, render_template, request, url_for
 from flask_login import current_user
-from sqlalchemy import func
+from sqlalchemy import func, or_
 
 from backend.arrieres.moteur import (
     bloquer_compte,
@@ -39,9 +39,11 @@ from backend.notifications.email_service import (
 )
 from backend.statuts import STATUTS_AFFICHAGE, STATUTS_EN_COURS_AGENT
 from extensions import db
-from models import AlerteSurveillance, Arriere, Declaration, EvaluationAgent, Organisateur, Paiement, Quittance
+from models import AlerteSurveillance, Arriere, Declaration, EvaluationAgent, Organisateur, Paiement, Quittance, Utilisateur
 
 from . import agent_bp
+
+DECLARATIONS_PAR_PAGE = 20
 
 
 def _statistiques_agent():
@@ -95,18 +97,41 @@ def tableau_de_bord():
 @agent_bp.route("/declarations")
 @role_required("agent", "admin")
 def declarations():
-    """Liste de toutes les declarations, filtrable par statut (parametre
-    ?statut=, utilise par les cartes statistiques du tableau de bord)."""
-    statut_filtre = request.args.get("statut")
+    """Liste filtrable / searchable / paginee des declarations."""
+    statut_filtre = request.args.get("statut", "").strip() or None
+    recherche = request.args.get("recherche", "").strip()
+    page = request.args.get("page", 1, type=int) or 1
+
     requete = Declaration.query
     if statut_filtre:
         requete = requete.filter_by(statut=statut_filtre)
-    toutes_declarations = requete.order_by(Declaration.date_soumission.desc()).all()
+    if recherche:
+        terme = f"%{recherche}%"
+        requete = (
+            requete.join(Organisateur, Declaration.organisateur_id == Organisateur.id)
+            .join(Utilisateur, Organisateur.utilisateur_id == Utilisateur.id)
+            .filter(
+                or_(
+                    Declaration.nom_artiste_evenement.ilike(terme),
+                    Declaration.ville.ilike(terme),
+                    Declaration.nom_salle.ilike(terme),
+                    Utilisateur.nom.ilike(terme),
+                    Utilisateur.prenom.ilike(terme),
+                    Utilisateur.email.ilike(terme),
+                )
+            )
+        )
+
+    pagination = requete.order_by(Declaration.date_soumission.desc()).paginate(
+        page=page, per_page=DECLARATIONS_PAR_PAGE, error_out=False
+    )
 
     return render_template(
         "agent/declarations.html",
-        declarations=toutes_declarations,
+        declarations=pagination.items,
+        pagination=pagination,
         statut_filtre=statut_filtre,
+        recherche=recherche,
         statuts_affichage=STATUTS_AFFICHAGE,
     )
 
@@ -158,6 +183,7 @@ def traiter_declaration(declaration_id):
         historique=_historique_organisateur(declaration.organisateur),
         statuts_affichage=STATUTS_AFFICHAGE,
         soldee=soldee,
+        montant_verrouille=_montant_verrouille(declaration),
         montant_deja_paye=_montant_deja_paye(declaration.id) if declaration.evaluation else 0,
         reste_du=_reste_du(declaration) if declaration.evaluation else 0,
     )
@@ -186,8 +212,12 @@ def fixer_montant(declaration_id):
     puis notifie l'organisateur (RM-030 a RM-033)."""
     declaration = Declaration.query.get_or_404(declaration_id)
 
-    if _declaration_soldee(declaration):
-        flash(MESSAGE_DEJA_SOLDE, "erreur")
+    if _montant_verrouille(declaration):
+        flash(
+            "Le montant ne peut plus être modifié : un versement a déjà été enregistré "
+            "ou le dossier est soldé.",
+            "erreur",
+        )
         return redirect(url_for("agent.traiter_declaration", declaration_id=declaration_id))
 
     erreurs = _valider_montant(request.form)
@@ -225,8 +255,12 @@ def mettre_en_attente(declaration_id):
     (RM-034)."""
     declaration = Declaration.query.get_or_404(declaration_id)
 
-    if _declaration_soldee(declaration):
-        flash(MESSAGE_DEJA_SOLDE, "erreur")
+    if _montant_verrouille(declaration):
+        flash(
+            "Impossible de mettre en attente : un versement a déjà été enregistré "
+            "ou le dossier est soldé.",
+            "erreur",
+        )
         return redirect(url_for("agent.traiter_declaration", declaration_id=declaration_id))
 
     commentaire = request.form.get("commentaire", "").strip()
@@ -264,15 +298,39 @@ def _reste_du(declaration):
 
 
 def _declaration_soldee(declaration):
-    """True si un paiement / une quittance bloque tout nouvel encaissement
-    ou toute re-fixation du montant."""
+    """True si le dossier est totalement regle (plus aucun encaissement possible).
+
+    RM-047/048 : un versement partiel ne solde PAS le dossier ; seuls une
+    quittance ou un reste du a zero bloquent de nouveaux paiements.
+    """
     if declaration.statut in STATUTS_DEJA_PAYES:
         return True
     if Quittance.query.filter_by(declaration_id=declaration.id).first() is not None:
         return True
-    if Paiement.query.filter_by(declaration_id=declaration.id).first() is not None:
+    if declaration.evaluation and _montant_deja_paye(declaration.id) > 0 and _reste_du(declaration) <= 0:
         return True
     return False
+
+
+def _montant_verrouille(declaration):
+    """True si tarif/redevance ne doivent plus etre modifies (versement deja enregistre)."""
+    return _declaration_soldee(declaration) or (
+        Paiement.query.filter_by(declaration_id=declaration.id).first() is not None
+    )
+
+
+def _synchroniser_arriere_declaration(declaration_id, reste):
+    """Cree/met a jour ou regle l'arriere lie a cette declaration."""
+    arriere = Arriere.query.filter_by(declaration_id=declaration_id, statut="en_attente").first()
+    if reste <= 0:
+        if arriere:
+            arriere.statut = "regle"
+            arriere.date_reglement = datetime.utcnow()
+        return None
+    if arriere:
+        arriere.montant_du = reste
+        return arriere
+    return creer_arriere(declaration_id, reste)
 
 
 @agent_bp.route("/declarations/<int:declaration_id>/paiement")
@@ -368,14 +426,12 @@ def _valider_paiement(donnees, reste_du):
 @agent_bp.route("/declarations/<int:declaration_id>/confirmer-paiement", methods=["POST"])
 @role_required("agent", "admin")
 def confirmer_paiement(declaration_id):
-    """Enregistre le paiement, cree un arriere si le paiement est partiel,
-    genere la quittance et notifie l'organisateur (RM-040 a RM-054).
+    """Enregistre un versement (integral ou partiel).
 
-    Verrouille la ligne declaration (SELECT FOR UPDATE) pour empecher deux
-    agents / un double-clic d'encaisser deux fois en parallele.
+    RM-047/048 : quittance uniquement quand le solde restant atteint zero.
+    Un paiement partiel cree/met a jour un arriere et laisse le dossier
+    ouvert pour de prochains versements.
     """
-    # Verrou pessimiste : la 2e requete concurrente attend puis voit le
-    # nouveau statut / la quittance deja creee.
     declaration = (
         Declaration.query.filter_by(id=declaration_id).with_for_update().first_or_404()
     )
@@ -399,17 +455,15 @@ def confirmer_paiement(declaration_id):
         return redirect(url_for("agent.paiement", declaration_id=declaration_id))
 
     type_paiement = request.form["type_paiement"]
-    reste_a_payer = float(request.form["reste_a_payer"]) if type_paiement == "partiel" else 0
+    montant = float(request.form["montant_chiffres"])
+    reste_a_payer = float(request.form["reste_a_payer"]) if type_paiement == "partiel" else 0.0
 
-    # Marquer immediatement comme payee avant la generation PDF / emails,
-    # pour qu'une 2e requete concurrente soit bloquee des le with_for_update.
-    declaration.statut = "payee"
     db.session.add(
         Paiement(
             declaration_id=declaration.id,
             mode_paiement=request.form["mode_paiement"],
             numero_cheque=request.form.get("numero_cheque", "").strip() or None,
-            montant_chiffres=float(request.form["montant_chiffres"]),
+            montant_chiffres=montant,
             montant_lettres=request.form["montant_lettres"].strip(),
             type_paiement=type_paiement,
             solde_apres=reste_a_payer,
@@ -418,26 +472,38 @@ def confirmer_paiement(declaration_id):
     )
     db.session.flush()
 
-    # La quittance integre d'abord les arrieres PRE-EXISTANTS de
-    # l'organisateur (RM-050 a RM-054, FONCTION 10 du moteur d'arrieres) ;
-    # le reste a payer de CETTE transaction n'est cree qu'ensuite, pour ne
-    # pas etre compte deux fois dans le montant exigible de la quittance.
-    generer_quittance(declaration, current_user)
-    declaration.statut = "quittance_delivree"
+    nouveau_reste = _reste_du(declaration)
 
-    if reste_a_payer > 0:
-        creer_arriere(declaration.id, reste_a_payer)
-
-    db.session.commit()
-    try:
-        notifier_quittance_disponible(declaration)
-        if declaration.promouvoir:
-            notifier_evenement_publie(declaration)
+    if nouveau_reste <= 0.01:
+        # Dossier soldé : quittance + notification (RM-045, RM-048, RM-050).
+        declaration.statut = "payee"
+        db.session.flush()
+        generer_quittance(declaration, current_user)
+        declaration.statut = "quittance_delivree"
+        _synchroniser_arriere_declaration(declaration.id, 0)
         db.session.commit()
-    except Exception:
-        db.session.rollback()
+        try:
+            notifier_quittance_disponible(declaration)
+            if declaration.promouvoir:
+                notifier_evenement_publie(declaration)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+        flash(
+            "Paiement confirmé et quittance générée. La notification a été envoyée à l'organisateur.",
+            "succes",
+        )
+    else:
+        # Versement partiel : pas de quittance, dossier reste ouvert (RM-047).
+        declaration.statut = "paiement_en_attente"
+        _synchroniser_arriere_declaration(declaration.id, nouveau_reste)
+        db.session.commit()
+        flash(
+            f"Versement partiel enregistré. Reste dû : {nouveau_reste:.0f} FCFA. "
+            "La quittance ne sera générée qu'après règlement du solde.",
+            "succes",
+        )
 
-    flash("Paiement confirmé et quittance générée. La notification a été envoyée à l'organisateur.", "succes")
     return redirect(url_for("agent.tableau_de_bord"))
 
 

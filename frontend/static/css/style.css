@@ -812,6 +812,15 @@ a:hover {
     align-items: center;
 }
 
+.pagination-agent {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+}
+
 .cellule-actions {
     white-space: nowrap;
 }

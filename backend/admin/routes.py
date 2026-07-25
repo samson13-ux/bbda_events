@@ -34,6 +34,36 @@ from . import stats as stats_admin
 NOMS_MOIS_FR = ["", "Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"]
 
 
+@admin_bp.route("/evenements-publics")
+@role_required("admin")
+def evenements_publics():
+    """Liste des evenements visibles publiquement (RM-090) pour moderation."""
+    evenements = (
+        Declaration.query.filter_by(promouvoir=True, statut="quittance_delivree")
+        .order_by(Declaration.date_evenement.desc())
+        .all()
+    )
+    return render_template("admin/evenements_publics.html", evenements=evenements)
+
+
+@admin_bp.route("/evenements-publics/<int:declaration_id>/depublier", methods=["POST"])
+@role_required("admin")
+def depublier_evenement(declaration_id):
+    """RM-092 : retire un evenement de la face publique (promouvoir=False)."""
+    declaration = Declaration.query.get_or_404(declaration_id)
+    if not declaration.promouvoir or declaration.statut != "quittance_delivree":
+        flash("Cet événement n'est pas actuellement publié.", "erreur")
+        return redirect(url_for("admin.evenements_publics"))
+
+    declaration.promouvoir = False
+    db.session.commit()
+    flash(
+        f"Événement « {declaration.nom_artiste_evenement} » dépublié du site public.",
+        "succes",
+    )
+    return redirect(url_for("admin.evenements_publics"))
+
+
 def _statistiques_globales():
     """Chiffres cles pour les 4 cartes du tableau de bord administrateur."""
     total_redevances = db.session.query(func.coalesce(func.sum(Quittance.somme_totale_chiffres), 0)).scalar()
