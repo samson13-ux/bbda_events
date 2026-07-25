@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", function () {
     initialiserOngletsUtilisateurs();
     initialiserFormulaireNouvelAgent();
     initialiserMenuLegalPublic();
+    initialiserRevealAccueil();
 });
 
 function initialiserFermetureMessagesFlash() {
@@ -228,6 +229,33 @@ function initialiserMenuLegalPublic() {
             deroulant.classList.remove("ouvert");
             bouton.setAttribute("aria-expanded", "false");
         }
+    });
+}
+
+function initialiserRevealAccueil() {
+    var blocs = document.querySelectorAll(".reveal-accueil");
+    if (!blocs.length) {
+        return;
+    }
+    if (!("IntersectionObserver" in window)) {
+        blocs.forEach(function (bloc) {
+            bloc.classList.add("reveal-accueil--visible");
+        });
+        return;
+    }
+    var observateur = new IntersectionObserver(
+        function (entrees) {
+            entrees.forEach(function (entree) {
+                if (entree.isIntersecting) {
+                    entree.target.classList.add("reveal-accueil--visible");
+                    observateur.unobserve(entree.target);
+                }
+            });
+        },
+        { threshold: 0.15, rootMargin: "0px 0px -5% 0px" }
+    );
+    blocs.forEach(function (bloc) {
+        observateur.observe(bloc);
     });
 }
 

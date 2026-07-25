@@ -1,0 +1,15 @@
+<a class="carte-evenement" href="{{ url_for('public.detail_evenement', declaration_id=evenement.id) }}">
+    <div class="carte-evenement__visuel">
+        {% if evenement.affiche_path %}
+        <img src="{{ url_for('static', filename=evenement.affiche_path) }}" alt="Affiche de {{ evenement.nom_artiste_evenement }}">
+        {% else %}
+        <div class="carte-evenement__placeholder">{{ evenement.nature_manifestation }}</div>
+        {% endif %}
+    </div>
+    <div class="carte-evenement__corps">
+        <p class="carte-evenement__type">{{ evenement.nature_manifestation }}</p>
+        <h2>{{ evenement.nom_artiste_evenement }}</h2>
+        <p>{{ evenement.date_evenement.strftime("%d/%m/%Y à %Hh%M") }}</p>
+        <p>{{ evenement.nom_salle }} - {{ evenement.ville }}</p>
+    </div>
+</a>

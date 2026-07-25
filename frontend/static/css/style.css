@@ -1289,6 +1289,27 @@ a.carte-stat:hover {
     pointer-events: none;
 }
 
+.heros-public__ambiance {
+    position: absolute;
+    width: 28rem;
+    height: 28rem;
+    right: -6rem;
+    top: 10%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(217, 164, 65, 0.28), transparent 68%);
+    animation: derive-ambiance 14s ease-in-out infinite alternate;
+    pointer-events: none;
+}
+
+@keyframes derive-ambiance {
+    from {
+        transform: translate(0, 0) scale(1);
+    }
+    to {
+        transform: translate(-3rem, 2rem) scale(1.12);
+    }
+}
+
 .heros-public__contenu {
     position: relative;
     width: 100%;
@@ -1411,6 +1432,101 @@ a.carte-stat:hover {
     color: #5a635c;
     margin: 0 0 2rem;
     font-size: 1.05rem;
+}
+
+.section-publique__intro--compact {
+    margin-bottom: 0;
+}
+
+.section-accueil-entete {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+}
+
+.section-accueil-entete h2 {
+    margin-bottom: 0.5rem;
+}
+
+.lien-voir-tous {
+    color: #1b3a2c;
+    font-weight: 600;
+    white-space: nowrap;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.lien-voir-tous:hover {
+    color: var(--couleur-primaire);
+    border-bottom-color: var(--couleur-primaire);
+    text-decoration: none;
+}
+
+.accueil-vide {
+    padding: 2rem 0 0.5rem;
+}
+
+.accueil-vide .message-vide {
+    margin-bottom: 0.5rem;
+}
+
+.accueil-vide .bouton-public {
+    margin-top: 1rem;
+}
+
+.reveal-accueil {
+    opacity: 0;
+    transform: translateY(1.25rem);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.reveal-accueil.reveal-accueil--visible {
+    opacity: 1;
+    transform: none;
+}
+
+.parcours-public li {
+    opacity: 0;
+    transform: translateY(0.75rem);
+    transition: opacity 0.55s ease, transform 0.55s ease;
+}
+
+.reveal-accueil--visible .parcours-public li {
+    opacity: 1;
+    transform: none;
+}
+
+.reveal-accueil--visible .parcours-public li:nth-child(2) {
+    transition-delay: 0.12s;
+}
+
+.reveal-accueil--visible .parcours-public li:nth-child(3) {
+    transition-delay: 0.24s;
+}
+
+#evenements-a-venir {
+    scroll-margin-top: 5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .heros-public__ambiance,
+    .heros-public__contenu,
+    .reveal-accueil,
+    .parcours-public li,
+    .carte-evenement {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    .reveal-accueil,
+    .parcours-public li {
+        opacity: 1;
+        transform: none;
+    }
 }
 
 .parcours-public {
@@ -1808,6 +1924,17 @@ a.carte-stat:hover {
     .heros-public {
         min-height: 85vh;
         align-items: center;
+    }
+
+    .section-accueil-entete {
+        align-items: flex-start;
+    }
+
+    .heros-public__ambiance {
+        width: 18rem;
+        height: 18rem;
+        right: -4rem;
+        opacity: 0.85;
     }
 }
 

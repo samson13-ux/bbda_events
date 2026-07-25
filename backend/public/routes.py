@@ -5,15 +5,19 @@ page de detail, placeholder billetterie, support (FAQ), contact
 (MessageContact), et pages legales.
 """
 
+from datetime import datetime
+
 from flask import abort, current_app, flash, redirect, render_template, request, url_for
 from sqlalchemy import or_
-from sqlalchemy.exc import ProgrammingError, OperationalError
+from sqlalchemy.exc import OperationalError, ProgrammingError
 
 from backend.notifications.email_service import notifier_message_contact
 from extensions import db
 from models import Declaration, MessageContact
 
 from . import public_bp
+
+NB_EVENEMENTS_ACCUEIL = 6
 
 
 def _evenements_publics(filtres=None):
@@ -45,10 +49,33 @@ def _assurer_tables():
         current_app.logger.exception("Impossible de recreer les tables")
 
 
+def _evenements_accueil():
+    """Prochains evenements publics a afficher sous le heros (max 6)."""
+    maintenant = datetime.utcnow()
+    return (
+        Declaration.query.filter_by(promouvoir=True, statut="quittance_delivree")
+        .filter(Declaration.date_evenement >= maintenant)
+        .order_by(Declaration.date_evenement.asc())
+        .limit(NB_EVENEMENTS_ACCUEIL)
+        .all()
+    )
+
+
 @public_bp.route("/")
 def accueil():
-    """Page d'accueil publique style Veenue adaptee au BBDA."""
-    return render_template("public/accueil.html")
+    """Accueil public : heros, evenements a venir, parcours de declaration."""
+    try:
+        evenements = _evenements_accueil()
+    except (ProgrammingError, OperationalError):
+        current_app.logger.exception("Lecture evenements accueil echouee, tentative create_all")
+        db.session.rollback()
+        _assurer_tables()
+        try:
+            evenements = _evenements_accueil()
+        except (ProgrammingError, OperationalError):
+            db.session.rollback()
+            evenements = []
+    return render_template("public/accueil.html", evenements=evenements)
 
 
 @public_bp.route("/evenements")

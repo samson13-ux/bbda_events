@@ -65,7 +65,17 @@ def test_accueil_accessible_sans_connexion(app, client):
     page = reponse.get_data(as_text=True)
     assert reponse.status_code == 200
     assert "BBDA Events" in page
-    assert "Déclarez. Promouvez. Célébrez." in page
+    assert "Événements à venir" in page
+    assert "Comment déclarer" in page
+
+
+def test_accueil_affiche_evenements_publics(app, client):
+    creer_evenement_public(app, nom="Concert Accueil")
+    reponse = client.get("/")
+    page = reponse.get_data(as_text=True)
+    assert reponse.status_code == 200
+    assert "Concert Accueil" in page
+    assert "Voir tous les événements" in page
 
 
 def test_evenements_sans_evenement_affiche_message_vide(app, client):
