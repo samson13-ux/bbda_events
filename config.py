@@ -18,6 +18,9 @@ class Config:
         _database_url = "postgresql+psycopg://" + _database_url[len("postgres://") :]
     elif _database_url.startswith("postgresql://"):
         _database_url = "postgresql+psycopg://" + _database_url[len("postgresql://") :]
+    # URL externe Render (*.render.com) : SSL souvent obligatoire
+    if _database_url and "render.com" in _database_url and "sslmode=" not in _database_url:
+        _database_url += ("&" if "?" in _database_url else "?") + "sslmode=require"
     SQLALCHEMY_DATABASE_URI = _database_url or None
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 

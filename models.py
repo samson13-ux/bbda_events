@@ -8,6 +8,11 @@ from flask_login import UserMixin
 from extensions import db, login_manager
 
 
+def _enum(*valeurs, name):
+    """Enum portable MySQL/Postgres (stocke en VARCHAR, evite les types ENUM natifs)."""
+    return db.Enum(*valeurs, name=name, native_enum=False, length=50)
+
+
 class Utilisateur(db.Model, UserMixin):
     """Compte de connexion (organisateur, agent ou administrateur)."""
 
@@ -18,8 +23,8 @@ class Utilisateur(db.Model, UserMixin):
     prenom = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(150), unique=True, nullable=False, index=True)
     mot_de_passe = db.Column(db.String(255), nullable=False)
-    role = db.Column(db.Enum("organisateur", "agent", "admin", name="role_enum"), nullable=False)
-    statut = db.Column(db.Enum("actif", "inactif", name="statut_utilisateur_enum"), default="actif")
+    role = db.Column(_enum("organisateur", "agent", "admin", name="role_enum"), nullable=False)
+    statut = db.Column(_enum("actif", "inactif", name="statut_utilisateur_enum"), default="actif")
     date_inscription = db.Column(db.DateTime, default=datetime.utcnow)
 
     organisateur = db.relationship("Organisateur", back_populates="utilisateur", uselist=False)
@@ -49,7 +54,7 @@ class Organisateur(db.Model):
     qualite = db.Column(db.String(100), nullable=False)
     telephone = db.Column(db.String(20), nullable=False)
     statut_compte = db.Column(
-        db.Enum("actif", "arriere", "bloque", "surveillance", name="statut_compte_enum"),
+        _enum("actif", "arriere", "bloque", "surveillance", name="statut_compte_enum"),
         default="actif",
     )
 
@@ -87,7 +92,7 @@ class Declaration(db.Model):
     affiche_path = db.Column(db.String(300), nullable=True)
     contact_public = db.Column(db.Boolean, default=False)
     statut = db.Column(
-        db.Enum(
+        _enum(
             "nouvelle",
             "en_evaluation",
             "montant_fixe",
@@ -155,11 +160,13 @@ class Paiement(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     declaration_id = db.Column(db.Integer, db.ForeignKey("declaration.id"), nullable=False, index=True)
-    mode_paiement = db.Column(db.Enum("especes", "cheque", "orange_money", name="mode_paiement_enum"), nullable=False)
+    mode_paiement = db.Column(
+        _enum("especes", "cheque", "orange_money", name="mode_paiement_enum"), nullable=False
+    )
     numero_cheque = db.Column(db.String(50), nullable=True)
     montant_chiffres = db.Column(db.Float, nullable=False)
     montant_lettres = db.Column(db.String(300), nullable=False)
-    type_paiement = db.Column(db.Enum("integral", "partiel", name="type_paiement_enum"), default="integral")
+    type_paiement = db.Column(_enum("integral", "partiel", name="type_paiement_enum"), default="integral")
     solde_apres = db.Column(db.Float, default=0)
     date_paiement = db.Column(db.DateTime, default=datetime.utcnow)
     confirme_par = db.Column(db.Integer, db.ForeignKey("utilisateur.id"), nullable=False)
@@ -205,7 +212,9 @@ class Arriere(db.Model):
     declaration_id = db.Column(db.Integer, db.ForeignKey("declaration.id"), nullable=True)
     montant_du = db.Column(db.Float, nullable=False)
     date_echeance = db.Column(db.DateTime, nullable=False)
-    statut = db.Column(db.Enum("en_attente", "regle", name="statut_arriere_enum"), default="en_attente", index=True)
+    statut = db.Column(
+        _enum("en_attente", "regle", name="statut_arriere_enum"), default="en_attente", index=True
+    )
     date_reglement = db.Column(db.DateTime, nullable=True)
     derniere_notification = db.Column(db.DateTime, nullable=True)
 
@@ -226,7 +235,7 @@ class Notification(db.Model):
     canal = db.Column(db.String(20), default="email")
     date_envoi = db.Column(db.DateTime, default=datetime.utcnow)
     statut = db.Column(
-        db.Enum("en_attente", "envoyee", "echouee", name="statut_notification_enum"),
+        _enum("en_attente", "envoyee", "echouee", name="statut_notification_enum"),
         default="en_attente",
         index=True,
     )

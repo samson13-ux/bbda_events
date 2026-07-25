@@ -41,8 +41,31 @@ def create_app(env=None):
     _register_blueprints(app)
     _configurer_login_manager()
     _configurer_gestion_erreurs(app)
+    _bootstrap_schema_si_besoin(app)
 
     return app
+
+
+def _bootstrap_schema_si_besoin(app):
+    """Sur Render (sans Shell), cree les tables + admin si la base est vide.
+
+    Ne fait rien si des utilisateurs existent deja. Ignore en mode testing.
+    """
+    if app.config.get("TESTING"):
+        return
+    with app.app_context():
+        try:
+            db.create_all()
+            from models import Utilisateur
+
+            if Utilisateur.query.first() is None:
+                from init_db import seed_base_vide
+
+                app.logger.info("Bootstrap : base vide, creation admin...")
+                seed_base_vide()
+        except Exception:
+            # Ne bloque pas le demarrage : les logs Render montreront la cause.
+            app.logger.exception("Bootstrap schema / admin a echoue")
 
 
 def _configurer_login_manager():
