@@ -8,8 +8,9 @@ Regles metier appliquees ici : RM-001 a RM-005 (acces), RM-080/RM-081
 import re
 
 import bcrypt
-from flask import flash, redirect, render_template, request, url_for
+from flask import current_app, flash, redirect, render_template, request, url_for
 from flask_login import login_required, login_user, logout_user
+from sqlalchemy.exc import OperationalError, ProgrammingError
 
 from extensions import db
 from models import Organisateur, Utilisateur
@@ -87,24 +88,38 @@ def inscription():
             flash(message, "erreur")
         return render_template("auth/inscription.html", donnees=request.form), 400
 
-    utilisateur = Utilisateur(
-        nom=request.form["nom"].strip(),
-        prenom=request.form["prenom"].strip(),
-        email=request.form["email"].strip().lower(),
-        mot_de_passe=_hacher(request.form["password"]),
-        role="organisateur",
-    )
-    db.session.add(utilisateur)
-    db.session.flush()  # obtenir utilisateur.id avant de creer le profil lie
-
-    db.session.add(
-        Organisateur(
-            utilisateur_id=utilisateur.id,
-            qualite=request.form["qualite"].strip(),
-            telephone=request.form["telephone"].strip(),
+    try:
+        utilisateur = Utilisateur(
+            nom=request.form["nom"].strip(),
+            prenom=request.form["prenom"].strip(),
+            email=request.form["email"].strip().lower(),
+            mot_de_passe=_hacher(request.form["password"]),
+            role="organisateur",
         )
-    )
-    db.session.commit()
+        db.session.add(utilisateur)
+        db.session.flush()  # obtenir utilisateur.id avant de creer le profil lie
+
+        db.session.add(
+            Organisateur(
+                utilisateur_id=utilisateur.id,
+                qualite=request.form["qualite"].strip(),
+                telephone=request.form["telephone"].strip(),
+            )
+        )
+        db.session.commit()
+    except (ProgrammingError, OperationalError):
+        db.session.rollback()
+        current_app.logger.exception("Inscription echouee (schema DB), tentative create_all")
+        try:
+            db.create_all()
+        except Exception:
+            current_app.logger.exception("create_all apres echec inscription")
+        flash(
+            "Erreur de base de données. Vérifie sur Render que Postgres est Available, "
+            "puis réessaie dans une minute.",
+            "erreur",
+        )
+        return render_template("auth/inscription.html", donnees=request.form), 503
 
     flash("Compte créé avec succès. Vous pouvez maintenant vous connecter.", "succes")
     return redirect(url_for("auth.connexion"))

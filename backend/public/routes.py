@@ -5,8 +5,9 @@ page de detail, placeholder billetterie, support (FAQ), contact
 (MessageContact), et pages legales.
 """
 
-from flask import abort, flash, redirect, render_template, request, url_for
+from flask import abort, current_app, flash, redirect, render_template, request, url_for
 from sqlalchemy import or_
+from sqlalchemy.exc import ProgrammingError, OperationalError
 
 from backend.notifications.email_service import notifier_message_contact
 from extensions import db
@@ -36,6 +37,14 @@ def _evenements_publics(filtres=None):
     return requete.order_by(Declaration.date_evenement.asc()).all()
 
 
+def _assurer_tables():
+    """Recree les tables si Postgres a perdu le schema (plan free / redemarrage)."""
+    try:
+        db.create_all()
+    except Exception:
+        current_app.logger.exception("Impossible de recreer les tables")
+
+
 @public_bp.route("/")
 def accueil():
     """Page d'accueil publique style Veenue adaptee au BBDA."""
@@ -58,9 +67,25 @@ def evenements():
         "Soirée culturelle",
         "Exposition",
     ]
+    try:
+        liste = _evenements_publics(filtres)
+    except (ProgrammingError, OperationalError):
+        current_app.logger.exception("Lecture evenements publics echouee, tentative create_all")
+        db.session.rollback()
+        _assurer_tables()
+        try:
+            liste = _evenements_publics(filtres)
+        except (ProgrammingError, OperationalError):
+            db.session.rollback()
+            flash(
+                "Le catalogue est temporairement indisponible (base de données). "
+                "Réessaie dans une minute.",
+                "erreur",
+            )
+            liste = []
     return render_template(
         "public/evenements.html",
-        evenements=_evenements_publics(filtres),
+        evenements=liste,
         filtres=filtres,
         types_disponibles=types_disponibles,
     )

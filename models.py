@@ -9,8 +9,12 @@ from extensions import db, login_manager
 
 
 def _enum(*valeurs, name):
-    """Enum portable MySQL/Postgres (stocke en VARCHAR, evite les types ENUM natifs)."""
-    return db.Enum(*valeurs, name=name, native_enum=False, length=50)
+    """Stocke les statuts en VARCHAR (portable MySQL/Postgres Render).
+
+    Evite les types ENUM natifs Postgres, source frequente d'erreurs f405
+    quand le schema est recree ou partiellement initialise.
+    """
+    return db.String(50)
 
 
 class Utilisateur(db.Model, UserMixin):

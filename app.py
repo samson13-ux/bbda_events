@@ -56,6 +56,10 @@ def _bootstrap_schema_si_besoin(app):
     with app.app_context():
         try:
             db.create_all()
+        except Exception:
+            app.logger.exception("Bootstrap create_all a echoue")
+            return
+        try:
             from models import Utilisateur
 
             if Utilisateur.query.first() is None:
@@ -65,7 +69,8 @@ def _bootstrap_schema_si_besoin(app):
                 seed_base_vide()
         except Exception:
             # Ne bloque pas le demarrage : les logs Render montreront la cause.
-            app.logger.exception("Bootstrap schema / admin a echoue")
+            db.session.rollback()
+            app.logger.exception("Bootstrap admin a echoue (verifie DATABASE_URL / Postgres Available)")
 
 
 def _configurer_login_manager():
