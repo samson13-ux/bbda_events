@@ -26,6 +26,9 @@
             </select>
         </div>
         <button type="submit" class="bouton-public">Filtrer</button>
+        {% if filtres.recherche or filtres.ville or filtres.type %}
+        <a class="lien-voir-tous" href="{{ url_for('public.evenements') }}">Réinitialiser</a>
+        {% endif %}
     </form>
 
     {% if evenements %}
@@ -35,7 +38,17 @@
         {% endfor %}
     </div>
     {% else %}
-    <p class="message-vide">Aucun événement à venir pour le moment.</p>
+    <div class="accueil-vide">
+        {% if filtres.recherche or filtres.ville or filtres.type %}
+        <p class="message-vide">Aucun événement ne correspond à ces filtres.</p>
+        <p class="aide-champ">Élargis ta recherche ou réinitialise les filtres.</p>
+        <a class="bouton-public" href="{{ url_for('public.evenements') }}">Voir tous les événements</a>
+        {% else %}
+        <p class="message-vide">Aucun événement à venir pour le moment.</p>
+        <p class="aide-champ">Les organisateurs peuvent déclarer une manifestation et la rendre visible après délivrance de la quittance.</p>
+        <a class="bouton-public" href="{{ url_for('auth.inscription') }}">Déclarer un événement</a>
+        {% endif %}
+    </div>
     {% endif %}
 </section>
 {% endblock %}

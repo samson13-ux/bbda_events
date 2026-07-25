@@ -1688,10 +1688,15 @@ a.carte-stat:hover {
 
 .filtres-evenements {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr auto;
+    grid-template-columns: 2fr 1fr 1fr auto auto;
     gap: 1rem;
     align-items: end;
     margin-bottom: 2rem;
+}
+
+.filtres-evenements .lien-voir-tous {
+    margin-bottom: 0.65rem;
+    white-space: nowrap;
 }
 
 .grille-evenements {

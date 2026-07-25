@@ -35,7 +35,9 @@ class Config:
     MAIL_USE_TLS = True
     MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
     MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
-    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_USERNAME")
+    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER") or os.environ.get("MAIL_USERNAME")
+    # API HTTPS Brevo (recommandee sur Render free : SMTP y est bloque).
+    BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
 
     MAX_CONTENT_LENGTH = 2 * 1024 * 1024  # 2 Mo, cf. RM-023
     UPLOAD_FOLDER = os.path.join("frontend", "static", "uploads")

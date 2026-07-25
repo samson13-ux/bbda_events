@@ -2,12 +2,18 @@
 
 Chaque notification est d'abord journalisee en base (table `notification`,
 statut `en_attente`) AVANT toute tentative d'envoi, puis son statut est mis a
-jour a `envoyee` ou `echouee` APRES la tentative d'envoi SMTP reel via
-Flask-Mail. Toute exception d'envoi est interceptee et journalisee : elle ne
-doit jamais faire planter l'application (RM-101, RM-102).
+jour a `envoyee` ou `echouee` APRES la tentative d'envoi.
+
+Sur Render (plan gratuit), les ports SMTP 25/465/587 sont bloques : preferer
+l'API HTTP Brevo (`BREVO_API_KEY`). En local, Flask-Mail/SMTP Gmail reste OK.
+
+Toute exception d'envoi est interceptee (RM-101, RM-102).
 """
 
+import json
 import socket
+import urllib.error
+import urllib.request
 
 from flask import current_app, url_for
 from flask_mail import Message
@@ -15,9 +21,9 @@ from flask_mail import Message
 from extensions import db, mail
 from models import Notification, Utilisateur
 
-# Sur Render, SMTP Gmail peut rester bloque longtemps : on coupe apres 10 s
-# pour ne pas faire tomber le formulaire (timeout worker / erreur 500).
-SMTP_TIMEOUT_SECONDES = 10
+# SMTP local : coupe apres 15 s pour ne pas faire tomber le worker.
+SMTP_TIMEOUT_SECONDES = 15
+BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
 
 COULEUR_BBDA = "#1F4E79"
 ADRESSE_BBDA = "01 BP 3926 Ouagadougou 01 : Tél. 25 32 47 50"
@@ -74,18 +80,79 @@ def _gabarit_html(sujet, paragraphes):
     """
 
 
-def _envoyer(notification, destinataire_email, corps_html, reply_to=None):
-    """Tente l'envoi SMTP reel d'une notification deja journalisee, puis met a
-    jour son statut selon le resultat (RM-101, RM-102)."""
+def _expediteur():
+    """Adresse d'expedition configuree (MAIL_DEFAULT_SENDER ou MAIL_USERNAME)."""
+    return current_app.config.get("MAIL_DEFAULT_SENDER") or current_app.config.get("MAIL_USERNAME")
+
+
+def _envoyer_via_brevo(notification, destinataire_email, corps_html, reply_to=None):
+    """Envoi via API HTTPS Brevo (fonctionne sur Render free, contrairement au SMTP)."""
+    expediteur = _expediteur()
+    if not expediteur:
+        raise RuntimeError("MAIL_USERNAME / MAIL_DEFAULT_SENDER manquant pour Brevo.")
+
+    payload = {
+        "sender": {"email": expediteur, "name": "BBDA Events"},
+        "to": [{"email": destinataire_email}],
+        "subject": notification.sujet,
+        "htmlContent": corps_html,
+    }
+    if reply_to:
+        payload["replyTo"] = {"email": reply_to}
+
+    requete = urllib.request.Request(
+        BREVO_API_URL,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "accept": "application/json",
+            "api-key": current_app.config["BREVO_API_KEY"],
+            "content-type": "application/json",
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(requete, timeout=15) as reponse:
+        if reponse.status not in (200, 201, 202):
+            corps = reponse.read().decode("utf-8", errors="replace")
+            raise RuntimeError(f"Brevo HTTP {reponse.status}: {corps}")
+
+
+def _envoyer_via_smtp(notification, destinataire_email, corps_html, reply_to=None):
+    """Envoi SMTP classique (Gmail) — OK en local, souvent bloque sur Render free."""
     timeout_avant = socket.getdefaulttimeout()
     try:
         socket.setdefaulttimeout(SMTP_TIMEOUT_SECONDES)
-        message = Message(subject=notification.sujet, recipients=[destinataire_email], html=corps_html)
+        message = Message(
+            subject=notification.sujet,
+            recipients=[destinataire_email],
+            html=corps_html,
+            sender=_expediteur(),
+        )
         if reply_to:
             message.reply_to = reply_to
         mail.send(message)
+    finally:
+        socket.setdefaulttimeout(timeout_avant)
+
+
+def _envoyer(notification, destinataire_email, corps_html, reply_to=None):
+    """Envoie la notification (Brevo si configure, sinon SMTP), puis met a jour
+    le statut (RM-101, RM-102)."""
+    if current_app.config.get("MAIL_SUPPRESS_SEND"):
         notification.statut = "envoyee"
-    except Exception as erreur:  # noqa: BLE001 — un echec d'envoi ne doit jamais planter l'appli
+        return notification
+
+    try:
+        if current_app.config.get("BREVO_API_KEY"):
+            _envoyer_via_brevo(notification, destinataire_email, corps_html, reply_to=reply_to)
+        else:
+            if not current_app.config.get("MAIL_USERNAME") or not current_app.config.get("MAIL_PASSWORD"):
+                raise RuntimeError(
+                    "Aucun canal email configure : definis BREVO_API_KEY (Render) "
+                    "ou MAIL_USERNAME + MAIL_PASSWORD (SMTP local)."
+                )
+            _envoyer_via_smtp(notification, destinataire_email, corps_html, reply_to=reply_to)
+        notification.statut = "envoyee"
+    except (Exception, urllib.error.URLError) as erreur:  # noqa: BLE001
         notification.statut = "echouee"
         current_app.logger.error(
             "Echec d'envoi de l'email '%s' (notification #%s) : %s",
@@ -93,8 +160,6 @@ def _envoyer(notification, destinataire_email, corps_html, reply_to=None):
             notification.id,
             erreur,
         )
-    finally:
-        socket.setdefaulttimeout(timeout_avant)
     return notification
 
 

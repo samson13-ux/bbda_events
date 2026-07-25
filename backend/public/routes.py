@@ -20,10 +20,12 @@ from . import public_bp
 NB_EVENEMENTS_ACCUEIL = 6
 
 
-def _evenements_publics(filtres=None):
+def _evenements_publics(filtres=None, a_venir_seulement=True):
     """Declarations visibles sur la face publique : promouvoir=True ET
     statut=quittance_delivree (RM-090, RM-091)."""
     requete = Declaration.query.filter_by(promouvoir=True, statut="quittance_delivree")
+    if a_venir_seulement:
+        requete = requete.filter(Declaration.date_evenement >= datetime.utcnow())
     if filtres:
         if filtres.get("ville"):
             requete = requete.filter(Declaration.ville.ilike(f"%{filtres['ville']}%"))
