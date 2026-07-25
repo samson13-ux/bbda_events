@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block titre %}BBDA Events : Mot de passe oublié{% endblock %}
+{% block contenu %}
+<div class="carte-formulaire">
+    <h1 class="titre-formulaire">Mot de passe oublié</h1>
+    <p class="aide-champ">Indiquez l’email de votre compte. Si un compte existe, vous recevrez un lien de réinitialisation.</p>
+
+    <form method="post" action="{{ url_for('auth.mot_de_passe_oublie') }}" novalidate>
+        {% include '_csrf.html' %}
+        <div class="champ-formulaire">
+            <label for="email">Email <span class="obligatoire">*</span></label>
+            <input type="email" id="email" name="email" required autofocus>
+        </div>
+        <button type="submit" class="bouton-soumettre bouton-soumettre--espace">Envoyer le lien</button>
+    </form>
+
+    <p class="lien-secondaire">
+        <a href="{{ url_for('auth.connexion') }}">Retour à la connexion</a>
+    </p>
+</div>
+{% endblock %}

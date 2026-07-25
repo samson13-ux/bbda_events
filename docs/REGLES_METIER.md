@@ -31,6 +31,7 @@
 | **RM-012** | La date de l'événement doit être dans le futur au moment de la déclaration |
 | **RM-013** | Une déclaration soumise reçoit automatiquement le statut `nouvelle` |
 | **RM-014** | Un email de confirmation est envoyé automatiquement à l'organisateur dès soumission |
+| **RM-015** | Un organisateur peut modifier sa déclaration uniquement tant que le statut est `nouvelle` (avant prise en charge par un agent). Dès `en_evaluation` ou statut ultérieur, la modification est refusée |
 
 ### 2.2. Promotion publique
 

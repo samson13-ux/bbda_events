@@ -10,14 +10,18 @@ import re
 import bcrypt
 from flask import current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required, login_user, logout_user
+from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from sqlalchemy.exc import OperationalError, ProgrammingError
 
+from backend.arrieres.moteur import verifier_connexion_surveillance
+from backend.notifications.email_service import notifier_reinitialisation_mot_de_passe
 from extensions import db, limiter
 from models import Organisateur, Utilisateur
 
-from backend.arrieres.moteur import verifier_connexion_surveillance
-
 from . import auth_bp
+
+DUREE_JETON_RESET_SECONDES = 3600
+SEL_JETON_RESET = "bbda-reset-mdp"
 
 REGEX_EMAIL = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
@@ -132,6 +136,85 @@ def _signaler_reconnexion_surveillance(utilisateur):
     organisateur = utilisateur.organisateur
     if organisateur and verifier_connexion_surveillance(organisateur.id):
         db.session.commit()
+
+
+def _serializer_reset_mdp():
+    return URLSafeTimedSerializer(current_app.config["SECRET_KEY"], salt=SEL_JETON_RESET)
+
+
+def _creer_jeton_reset(utilisateur_id):
+    return _serializer_reset_mdp().dumps({"uid": utilisateur_id})
+
+
+def _lire_jeton_reset(jeton):
+    """Retourne l'id utilisateur ou None si jeton invalide/expire."""
+    try:
+        donnees = _serializer_reset_mdp().loads(jeton, max_age=DUREE_JETON_RESET_SECONDES)
+    except (BadSignature, SignatureExpired):
+        return None
+    return donnees.get("uid")
+
+
+@auth_bp.route("/mot-de-passe-oublie", methods=["GET", "POST"])
+@limiter.limit("5 per minute")
+def mot_de_passe_oublie():
+    """Demande un lien de reinitialisation (ne revele pas si l'email existe)."""
+    if request.method == "GET":
+        return render_template("auth/mot_de_passe_oublie.html")
+
+    email = request.form.get("email", "").strip().lower()
+    utilisateur = Utilisateur.query.filter_by(email=email, statut="actif").first()
+    if utilisateur:
+        jeton = _creer_jeton_reset(utilisateur.id)
+        chemin = url_for("auth.reinitialiser_mot_de_passe", jeton=jeton)
+        base = (current_app.config.get("PUBLIC_BASE_URL") or "").rstrip("/")
+        lien = f"{base}{chemin}" if base else url_for(
+            "auth.reinitialiser_mot_de_passe", jeton=jeton, _external=True
+        )
+        try:
+            notifier_reinitialisation_mot_de_passe(utilisateur, lien)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            current_app.logger.exception("Echec envoi reset mot de passe")
+
+    flash(
+        "Si un compte actif existe pour cet email, un lien de réinitialisation a été envoyé.",
+        "succes",
+    )
+    return redirect(url_for("auth.connexion"))
+
+
+@auth_bp.route("/reinitialiser-mot-de-passe/<jeton>", methods=["GET", "POST"])
+@limiter.limit("10 per minute")
+def reinitialiser_mot_de_passe(jeton):
+    """Choisit un nouveau mot de passe via le jeton email (valable 1 h)."""
+    utilisateur_id = _lire_jeton_reset(jeton)
+    if utilisateur_id is None:
+        flash("Ce lien de réinitialisation est invalide ou a expiré.", "erreur")
+        return redirect(url_for("auth.mot_de_passe_oublie"))
+
+    utilisateur = Utilisateur.query.filter_by(id=utilisateur_id, statut="actif").first()
+    if utilisateur is None:
+        flash("Ce compte n'est plus disponible.", "erreur")
+        return redirect(url_for("auth.connexion"))
+
+    if request.method == "GET":
+        return render_template("auth/reinitialiser_mot_de_passe.html", jeton=jeton)
+
+    nouveau = request.form.get("nouveau_mot_de_passe", "")
+    confirmation = request.form.get("confirmation", "")
+    if len(nouveau) < 8:
+        flash("Le mot de passe doit contenir au moins 8 caractères.", "erreur")
+        return render_template("auth/reinitialiser_mot_de_passe.html", jeton=jeton), 400
+    if nouveau != confirmation:
+        flash("La confirmation ne correspond pas.", "erreur")
+        return render_template("auth/reinitialiser_mot_de_passe.html", jeton=jeton), 400
+
+    utilisateur.mot_de_passe = _hacher(nouveau)
+    db.session.commit()
+    flash("Mot de passe mis à jour. Vous pouvez vous connecter.", "succes")
+    return redirect(url_for("auth.connexion"))
 
 
 @auth_bp.route("/connexion", methods=["GET", "POST"])

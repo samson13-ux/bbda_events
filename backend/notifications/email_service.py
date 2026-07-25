@@ -372,6 +372,29 @@ def notifier_evenement_publie(declaration):
     return _envoyer(notification, utilisateur.email, _gabarit_html(sujet, paragraphes))
 
 
+def notifier_reinitialisation_mot_de_passe(utilisateur, lien_reset):
+    """Envoie le lien de reinitialisation de mot de passe (Partie 3)."""
+    sujet = "BBDA Events : Réinitialisation de votre mot de passe"
+    paragraphes = [
+        f"Bonjour {utilisateur.prenom},",
+        "Une demande de réinitialisation de mot de passe a été faite pour votre compte BBDA Events.",
+        f'<a href="{lien_reset}" style="color:{COULEUR_BBDA};">Cliquez ici pour choisir un nouveau mot de passe</a>',
+        "Ce lien expire dans une heure. Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.",
+    ]
+    texte = (
+        f"Réinitialisation de mot de passe\n\n"
+        f"Bonjour {utilisateur.prenom},\n"
+        f"Ouvrez ce lien (valable 1 h) : {lien_reset}\n"
+    )
+    notification = _enregistrer_notification(
+        destinataire_id=utilisateur.id,
+        type_notification="reset_mot_de_passe",
+        sujet=sujet,
+        message=texte,
+    )
+    return _envoyer(notification, utilisateur.email, _gabarit_html(sujet, paragraphes))
+
+
 def notifier_message_contact(message_contact):
     """Transmet un message du formulaire Contact a la boite mail dediee
     de l'application (MAIL_DEFAULT_SENDER / MAIL_USERNAME), afin que le

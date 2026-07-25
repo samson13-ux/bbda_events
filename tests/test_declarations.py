@@ -140,3 +140,53 @@ def test_aucune_declaration_affiche_message_vide(app, client):
     reponse = client.get("/declarations/")
 
     assert "Aucune déclaration pour l'instant." in reponse.get_data(as_text=True)
+
+
+def test_organisateur_peut_modifier_declaration_nouvelle(app, client):
+    """RM-015 : une declaration `nouvelle` est editable par son proprietaire."""
+    from datetime import timedelta
+
+    organisateur_id = creer_organisateur(app, "orga_edit@example.com")
+    declaration_id = creer_declaration(app, organisateur_id, "nouvelle")
+    connecter(client, "orga_edit@example.com")
+
+    date_future = (datetime.utcnow() + timedelta(days=15)).strftime("%Y-%m-%dT%H:%M")
+    reponse = client.post(
+        f"/declarations/{declaration_id}/modifier",
+        data={
+            "nom_demandeur": "Test",
+            "prenom_demandeur": "Orga",
+            "qualite": "Organisateur",
+            "telephone": "70000000",
+            "email": "orga_edit@example.com",
+            "nature_manifestation": "Festival",
+            "nom_artiste_evenement": "Nom Modifie",
+            "nom_salle": "Salle Test",
+            "adresse": "Adresse Test",
+            "ville": "Bobo-Dioulasso",
+            "date_evenement": date_future,
+            "duree_heures": "3",
+            "capacite_accueil": "100",
+            "entree": "gratuite",
+            "nature_diffusion": ["vivante"],
+        },
+        follow_redirects=False,
+    )
+    assert reponse.status_code == 302
+
+    with app.app_context():
+        declaration = Declaration.query.get(declaration_id)
+        assert declaration.nom_artiste_evenement == "Nom Modifie"
+        assert declaration.ville == "Bobo-Dioulasso"
+        assert declaration.statut == "nouvelle"
+
+
+def test_organisateur_ne_peut_pas_modifier_apres_prise_en_charge(app, client):
+    """RM-015 : statut autre que `nouvelle` refuse la modification."""
+    organisateur_id = creer_organisateur(app, "orga_edit2@example.com")
+    declaration_id = creer_declaration(app, organisateur_id, "en_evaluation")
+    connecter(client, "orga_edit2@example.com")
+
+    reponse = client.get(f"/declarations/{declaration_id}/modifier", follow_redirects=False)
+    assert reponse.status_code == 302
+    assert f"/declarations/{declaration_id}" in reponse.headers["Location"]

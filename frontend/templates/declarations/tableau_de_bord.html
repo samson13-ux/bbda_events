@@ -46,7 +46,7 @@
             <th>Date événement</th>
             <th>Statut</th>
             <th>Soumis le</th>
-            <th>Voir</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
@@ -58,7 +58,12 @@
             <td>{{ declaration.date_evenement.strftime("%d/%m/%Y") }}</td>
             <td><span class="badge badge--{{ css }}">{{ libelle }}</span></td>
             <td>{{ declaration.date_soumission.strftime("%d/%m/%Y") }}</td>
-            <td><a href="{{ url_for('declarations.detail', declaration_id=declaration.id) }}">Voir</a></td>
+            <td class="cellule-actions">
+                <a href="{{ url_for('declarations.detail', declaration_id=declaration.id) }}">Voir</a>
+                {% if declaration.statut == "nouvelle" %}
+                · <a href="{{ url_for('declarations.modifier', declaration_id=declaration.id) }}">Modifier</a>
+                {% endif %}
+            </td>
         </tr>
         {% endfor %}
     </tbody>

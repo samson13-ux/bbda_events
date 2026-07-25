@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block titre %}BBDA Events : Nouveau mot de passe{% endblock %}
+{% block contenu %}
+<div class="carte-formulaire">
+    <h1 class="titre-formulaire">Choisir un nouveau mot de passe</h1>
+    <p class="aide-champ">Minimum 8 caractères.</p>
+
+    <form method="post" action="{{ url_for('auth.reinitialiser_mot_de_passe', jeton=jeton) }}" novalidate>
+        {% include '_csrf.html' %}
+        <div class="champ-formulaire">
+            <label for="nouveau_mot_de_passe">Nouveau mot de passe <span class="obligatoire">*</span></label>
+            <input type="password" id="nouveau_mot_de_passe" name="nouveau_mot_de_passe" required minlength="8" autocomplete="new-password">
+        </div>
+        <div class="champ-formulaire">
+            <label for="confirmation">Confirmation <span class="obligatoire">*</span></label>
+            <input type="password" id="confirmation" name="confirmation" required minlength="8" autocomplete="new-password">
+        </div>
+        <button type="submit" class="bouton-soumettre bouton-soumettre--espace">Enregistrer</button>
+    </form>
+</div>
+{% endblock %}

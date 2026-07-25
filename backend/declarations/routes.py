@@ -12,6 +12,7 @@ from datetime import datetime
 from flask import abort, current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user
 from sqlalchemy import func
+from werkzeug.datastructures import MultiDict
 from werkzeug.utils import secure_filename
 
 from backend.auth.decorators import role_required
@@ -204,6 +205,89 @@ def _valider_et_sauver_affiche(fichier):
     return f"uploads/{nom_fichier}"
 
 
+def _declaration_proprietaire_ou_404(declaration_id):
+    """RM-004 : declaration appartenant a l'organisateur connecte."""
+    declaration = Declaration.query.get_or_404(declaration_id)
+    if declaration.organisateur_id != current_user.organisateur.id:
+        abort(404)
+    return declaration
+
+
+def _formdata_depuis_declaration(declaration):
+    """Reconstitue un MultiDict compatible avec le formulaire (edition)."""
+    nature = declaration.nature_diffusion or ""
+    paires = [
+        ("nom_demandeur", declaration.nom_demandeur),
+        ("prenom_demandeur", declaration.prenom_demandeur),
+        (
+            "qualite",
+            "Autre" if declaration.qualite_demandeur != "Organisateur" else "Organisateur",
+        ),
+        (
+            "qualite_autre",
+            declaration.qualite_demandeur if declaration.qualite_demandeur != "Organisateur" else "",
+        ),
+        ("telephone", declaration.telephone),
+        ("email", declaration.email),
+        ("nature_manifestation", declaration.nature_manifestation),
+        ("nom_artiste_evenement", declaration.nom_artiste_evenement),
+        ("nom_salle", declaration.nom_salle),
+        ("adresse", declaration.adresse),
+        ("ville", declaration.ville),
+        ("date_evenement", declaration.date_evenement.strftime("%Y-%m-%dT%H:%M")),
+        ("duree_heures", str(declaration.duree_heures)),
+        ("capacite_accueil", str(declaration.capacite_accueil)),
+        ("entree", "payante" if declaration.entree_payante else "gratuite"),
+        ("autres_details", declaration.autres_details or ""),
+        ("description_publique", declaration.description_publique or ""),
+    ]
+    if "Musique vivante" in nature:
+        paires.append(("nature_diffusion", "vivante"))
+    if "Musique mécanique" in nature or "Musique mecanique" in nature:
+        paires.append(("nature_diffusion", "mecanique"))
+    if "Autres :" in nature:
+        paires.append(("nature_diffusion", "autres"))
+        paires.append(("nature_diffusion_autre", nature.split("Autres :", 1)[1].strip()))
+    if declaration.promouvoir:
+        paires.append(("promouvoir", "on"))
+    if declaration.contact_public:
+        paires.append(("contact_public", "on"))
+    return MultiDict(paires)
+
+
+def _appliquer_donnees_declaration(declaration, donnees, affiche_path=None):
+    """Met a jour les champs editables sans changer le statut (RM-015)."""
+    qualite_autre = donnees.get("qualite_autre", "").strip()
+    promouvoir = donnees.get("promouvoir") == "on"
+    declaration.nom_demandeur = donnees["nom_demandeur"].strip()
+    declaration.prenom_demandeur = donnees["prenom_demandeur"].strip()
+    declaration.qualite_demandeur = (
+        qualite_autre if donnees.get("qualite") == "Autre" else "Organisateur"
+    )
+    declaration.telephone = donnees["telephone"].strip()
+    declaration.email = donnees["email"].strip().lower()
+    declaration.nature_manifestation = donnees["nature_manifestation"].strip()
+    declaration.nom_artiste_evenement = donnees["nom_artiste_evenement"].strip()
+    declaration.nom_salle = donnees["nom_salle"].strip()
+    declaration.adresse = donnees["adresse"].strip()
+    declaration.ville = donnees["ville"].strip()
+    declaration.date_evenement = _parser_date_evenement(donnees["date_evenement"])
+    declaration.duree_heures = float(donnees["duree_heures"])
+    declaration.capacite_accueil = int(float(donnees["capacite_accueil"]))
+    declaration.entree_payante = donnees.get("entree") == "payante"
+    declaration.nature_diffusion = _construire_nature_diffusion(donnees)
+    declaration.autres_details = donnees.get("autres_details", "").strip() or None
+    declaration.promouvoir = promouvoir
+    declaration.description_publique = (
+        donnees.get("description_publique", "").strip() or None if promouvoir else None
+    )
+    declaration.contact_public = donnees.get("contact_public") == "on" if promouvoir else False
+    if not promouvoir:
+        declaration.affiche_path = None
+    elif affiche_path:
+        declaration.affiche_path = affiche_path
+
+
 def _construire_declaration(organisateur_id, donnees, affiche_path=None):
     """Construit (sans l'ajouter a la session) une Declaration a partir des
     donnees validees du formulaire, y compris les champs de promotion."""
@@ -278,6 +362,66 @@ def nouvelle():
 
     flash("Votre déclaration a bien été envoyée au BBDA. Vous recevrez une confirmation par email.", "succes")
     return redirect(url_for("declarations.tableau_de_bord"))
+
+
+@declarations_bp.route("/<int:declaration_id>/modifier", methods=["GET", "POST"])
+@role_required("organisateur")
+def modifier(declaration_id):
+    """RM-015 : correction d'une declaration encore au statut `nouvelle`."""
+    declaration = _declaration_proprietaire_ou_404(declaration_id)
+    if declaration.statut != "nouvelle":
+        flash(
+            "Cette déclaration ne peut plus être modifiée : elle est déjà prise en charge par le BBDA.",
+            "erreur",
+        )
+        return redirect(url_for("declarations.detail", declaration_id=declaration.id))
+
+    if request.method == "GET":
+        artistes = [(a.nom_artiste, a.discipline or "") for a in declaration.artistes]
+        return render_template(
+            "declarations/nouvelle.html",
+            donnees=_formdata_depuis_declaration(declaration),
+            artistes_soumis=artistes,
+            mode_edition=True,
+            declaration=declaration,
+            action_url=url_for("declarations.modifier", declaration_id=declaration.id),
+            titre_formulaire=f"Modifier la déclaration #{declaration.id}",
+            libelle_bouton="Enregistrer les modifications",
+        )
+
+    erreurs = _valider_declaration(request.form)
+    affiche_path = None
+    try:
+        affiche_path = _valider_et_sauver_affiche(request.files.get("affiche"))
+    except ValueError as erreur:
+        erreurs.append(str(erreur))
+
+    if erreurs:
+        for message in erreurs:
+            flash(message, "erreur")
+        artistes_soumis = list(
+            zip(request.form.getlist("artiste_nom"), request.form.getlist("artiste_discipline"))
+        )
+        return (
+            render_template(
+                "declarations/nouvelle.html",
+                donnees=request.form,
+                artistes_soumis=artistes_soumis,
+                mode_edition=True,
+                declaration=declaration,
+                action_url=url_for("declarations.modifier", declaration_id=declaration.id),
+                titre_formulaire=f"Modifier la déclaration #{declaration.id}",
+                libelle_bouton="Enregistrer les modifications",
+            ),
+            400,
+        )
+
+    _appliquer_donnees_declaration(declaration, request.form, affiche_path=affiche_path)
+    ListeArtiste.query.filter_by(declaration_id=declaration.id).delete()
+    _enregistrer_artistes(declaration.id, request.form)
+    db.session.commit()
+    flash("Votre déclaration a été mise à jour.", "succes")
+    return redirect(url_for("declarations.detail", declaration_id=declaration.id))
 
 
 def _construire_frise(declaration):

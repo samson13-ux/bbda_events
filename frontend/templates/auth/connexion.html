@@ -25,6 +25,9 @@
     </form>
 
     <p class="lien-secondaire">
+        <a href="{{ url_for('auth.mot_de_passe_oublie') }}">Mot de passe oublié ?</a>
+    </p>
+    <p class="lien-secondaire">
         Pas encore de compte ? <a href="{{ url_for('auth.inscription') }}">Créer un compte</a>
     </p>
 </div>

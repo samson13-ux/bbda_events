@@ -805,6 +805,54 @@ a:hover {
     background-color: var(--couleur-secondaire);
 }
 
+.entete-detail__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    align-items: center;
+}
+
+.cellule-actions {
+    white-space: nowrap;
+}
+
+.carte-formulaire input,
+.carte-formulaire select,
+.carte-formulaire textarea {
+    font-size: 1rem;
+}
+
+@media (max-width: 40rem) {
+    .carte-formulaire.carte-formulaire--large {
+        padding: 1.25rem 1rem;
+    }
+
+    .artiste-ligne {
+        grid-template-columns: 1fr;
+    }
+
+    .groupe-radio label {
+        white-space: normal;
+    }
+
+    .barre-boutons-formulaire {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+
+    .barre-boutons-formulaire .bouton-soumettre,
+    .barre-boutons-formulaire .bouton-annuler {
+        width: 100%;
+        text-align: center;
+    }
+
+    .tableau-declarations {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
 /* Actions arrieres et surveillance (Prompt 15) */
 
 .actions-arrieres {

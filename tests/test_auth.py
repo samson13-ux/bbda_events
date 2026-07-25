@@ -154,6 +154,45 @@ def test_deconnexion_puis_acces_refuse(app, client):
     assert "/auth/connexion" in reponse.headers["Location"]
 
 
+def test_mot_de_passe_oublie_reinitialise_le_compte(app, client):
+    """Partie 3 : jeton de reset puis nouveau mot de passe."""
+    creer_utilisateur(app, "organisateur", "orga-reset@example.com")
+
+    reponse = client.post(
+        "/auth/mot-de-passe-oublie",
+        data={"email": "orga-reset@example.com"},
+        follow_redirects=False,
+    )
+    assert reponse.status_code == 302
+
+    with app.app_context():
+        from backend.auth.routes import _creer_jeton_reset
+        from models import Utilisateur
+
+        utilisateur = Utilisateur.query.filter_by(email="orga-reset@example.com").first()
+        jeton = _creer_jeton_reset(utilisateur.id)
+
+    reponse = client.post(
+        f"/auth/reinitialiser-mot-de-passe/{jeton}",
+        data={"nouveau_mot_de_passe": "NouveauPass99", "confirmation": "NouveauPass99"},
+        follow_redirects=False,
+    )
+    assert reponse.status_code == 302
+
+    refuse = client.post(
+        "/auth/connexion",
+        data={"email": "orga-reset@example.com", "password": "password123"},
+    )
+    assert refuse.status_code == 401
+
+    ok = client.post(
+        "/auth/connexion",
+        data={"email": "orga-reset@example.com", "password": "NouveauPass99"},
+        follow_redirects=False,
+    )
+    assert ok.status_code == 302
+
+
 def test_csrf_protege_la_connexion_hors_tests():
     """Partie 2 : sans jeton CSRF, un POST connexion est refuse."""
     application = create_app("testing")

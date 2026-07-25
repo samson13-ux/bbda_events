@@ -6,7 +6,12 @@
         <h1>Déclaration #{{ declaration.id }} - {{ declaration.nature_manifestation }}</h1>
         <span class="badge badge--grand badge--{{ libelle_css }}">{{ libelle_statut }}</span>
     </div>
-    <a class="bouton-annuler" href="{{ url_for('declarations.tableau_de_bord') }}">&larr; Tableau de bord</a>
+    <div class="entete-detail__actions">
+        {% if declaration.statut == "nouvelle" %}
+        <a class="bouton-soumettre" href="{{ url_for('declarations.modifier', declaration_id=declaration.id) }}">Modifier</a>
+        {% endif %}
+        <a class="bouton-annuler" href="{{ url_for('declarations.tableau_de_bord') }}">&larr; Tableau de bord</a>
+    </div>
 </div>
 
 <div class="mise-en-page-detail">
