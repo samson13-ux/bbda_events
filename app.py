@@ -80,6 +80,14 @@ def _bootstrap_schema_si_besoin(app):
             # Ne bloque pas le demarrage : les logs Render montreront la cause.
             db.session.rollback()
             app.logger.exception("Bootstrap admin a echoue (verifie DATABASE_URL / Postgres Available)")
+        finally:
+            # Important avant un fork Gunicorn : ne pas laisser de connexion SSL
+            # ouverte dans le process maitre (sinon "bad record mac").
+            try:
+                db.session.remove()
+                db.engine.dispose()
+            except Exception:
+                pass
 
 
 def _configurer_login_manager():

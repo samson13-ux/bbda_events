@@ -38,7 +38,13 @@ Dans le Web Service → **Environment** :
 
 ### Astuce DATABASE_URL
 
-Render donne parfois `postgres://...`. L'app convertit automatiquement vers `postgresql+psycopg://` et ajoute `sslmode=require` si besoin.
+1. Ouvre ton service **PostgreSQL** (pas le Web Service)
+2. Copie l’**Internal Database URL** (recommandé)  
+3. Colle-la dans le Web Service → Environment → `DATABASE_URL`
+
+L'app convertit automatiquement `postgres://` → `postgresql+psycopg://` et ajoute `sslmode=require` si besoin.
+
+Si tu vois `SSL error: decryption failed or bad record mac` : redéploie, vérifie que Postgres est **Available**, et que `DATABASE_URL` est bien l’URL **Internal**.
 
 ## Etape 4 — Premier demarrage + admin
 

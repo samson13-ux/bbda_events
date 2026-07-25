@@ -26,6 +26,14 @@ class Config:
         _database_url += ("&" if "?" in _database_url else "?") + "sslmode=require"
     SQLALCHEMY_DATABASE_URI = _database_url or None
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # Render + SSL Postgres : evite les connexions mortes / partagees entre workers
+    # (erreur frequente : "SSL error: decryption failed or bad record mac").
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 280,
+        "pool_size": 2,
+        "max_overflow": 1,
+    }
 
     MAIL_SERVER = "smtp.gmail.com"
     MAIL_PORT = 587
