@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block titre %}BBDA Events : Paramètres{% endblock %}
+{% block contenu %}
+<div class="bloc-agent" style="max-width: 36rem; margin: 2rem auto;">
+    <h1>Paramètres</h1>
+    <p class="aide-champ">Gérez les informations de votre compte organisateur.</p>
+
+    <section class="champ-formulaire" style="margin-top: 1.5rem;">
+        <h2 style="font-size: 1.1rem; margin-bottom: 0.75rem;">Mon compte</h2>
+        <p><strong>Nom :</strong> {{ current_user.prenom }} {{ current_user.nom }}</p>
+        <p><strong>Email :</strong> {{ current_user.email }}</p>
+    </section>
+
+    <section style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #d8d0c4;">
+        <h2 style="font-size: 1.1rem; margin-bottom: 0.5rem;">Zone sensible</h2>
+        <p class="aide-champ">
+            La suppression désactive votre accès. Vous ne pourrez plus vous connecter avec cet email.
+            Vos déclarations restent conservées côté BBDA.
+        </p>
+        <a class="bouton-soumettre" style="background: #8b2e2e; display: inline-block; margin-top: 0.75rem;"
+           href="{{ url_for('auth.supprimer_compte') }}">Supprimer mon compte</a>
+    </section>
+
+    <p style="margin-top: 2rem;">
+        <a class="bouton-annuler" href="{{ url_for('declarations.tableau_de_bord') }}">Retour à mon espace</a>
+    </p>
+</div>
+{% endblock %}

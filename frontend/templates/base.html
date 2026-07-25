@@ -18,6 +18,7 @@
                     <span class="salutation">Bonjour, {{ current_user.prenom }}</span>
                     {% if current_user.role == "organisateur" %}
                         <a href="{{ url_for('declarations.tableau_de_bord') }}">Mon espace</a>
+                        <a href="{{ url_for('auth.parametres') }}">Paramètres</a>
                     {% elif current_user.role == "agent" %}
                         <a href="{{ url_for('agent.tableau_de_bord') }}">Mon espace</a>
                     {% elif current_user.role == "admin" %}

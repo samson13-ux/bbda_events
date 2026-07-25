@@ -161,7 +161,7 @@ def test_organisateur_peut_supprimer_son_compte(app, client):
 
     reponse = client.post(
         "/auth/supprimer-compte",
-        data={"confirmation": "SUPPRIMER"},
+        data={"confirmer": "oui"},
         follow_redirects=False,
     )
     assert reponse.status_code == 302

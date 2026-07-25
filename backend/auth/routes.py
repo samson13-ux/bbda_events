@@ -151,7 +151,10 @@ def connexion():
         return render_template("auth/connexion.html"), 401
 
     if utilisateur.statut != "actif":
-        flash("Ce compte est inactif. Contactez le BBDA.", "erreur")
+        flash(
+            "Ce compte a été désactivé ou supprimé. Contactez le BBDA pour le réactiver.",
+            "erreur",
+        )
         return render_template("auth/connexion.html"), 403
 
     login_user(utilisateur, remember=bool(request.form.get("remember")))
@@ -162,6 +165,16 @@ def connexion():
     return redirect(url_for(DESTINATION_PAR_ROLE[utilisateur.role]))
 
 
+@auth_bp.route("/parametres")
+@login_required
+def parametres():
+    """Page parametres du compte organisateur (suppression, infos)."""
+    if current_user.role != "organisateur":
+        flash("Les paramètres compte organisateur ne sont pas disponibles pour ce rôle.", "erreur")
+        return redirect(url_for(DESTINATION_PAR_ROLE.get(current_user.role, "public.accueil")))
+    return render_template("auth/parametres.html")
+
+
 @auth_bp.route("/supprimer-compte", methods=["GET", "POST"])
 @login_required
 def supprimer_compte():
@@ -169,6 +182,8 @@ def supprimer_compte():
 
     Les agents/admins ne peuvent pas s'auto-supprimer ici : gestion via
     l'espace admin. Les declarations restent en base pour le BBDA.
+    Apres suppression, la connexion et une nouvelle inscription avec le
+    meme email sont refusees tant que le BBDA ne reactive pas le compte.
     """
     if current_user.role != "organisateur":
         flash("Seuls les organisateurs peuvent supprimer leur compte depuis cet écran.", "erreur")
@@ -177,14 +192,17 @@ def supprimer_compte():
     if request.method == "GET":
         return render_template("auth/supprimer_compte.html")
 
-    if request.form.get("confirmation", "").strip().upper() != "SUPPRIMER":
-        flash("Confirmation incorrecte. Tapez SUPPRIMER pour valider.", "erreur")
-        return render_template("auth/supprimer_compte.html"), 400
+    if request.form.get("confirmer") != "oui":
+        flash("Suppression annulée.", "info")
+        return redirect(url_for("auth.parametres"))
 
     current_user.statut = "inactif"
     db.session.commit()
     logout_user()
-    flash("Votre compte a été désactivé. Vous ne pouvez plus vous connecter.", "succes")
+    flash(
+        "Votre compte a été supprimé. Vous ne pouvez plus vous connecter avec cet email.",
+        "succes",
+    )
     return redirect(url_for("public.accueil"))
 
 

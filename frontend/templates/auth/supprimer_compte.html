@@ -3,22 +3,17 @@
 {% block contenu %}
 <div class="bloc-agent" style="max-width: 36rem; margin: 2rem auto;">
     <h1>Supprimer mon compte</h1>
-    <p>
-        Cette action désactive définitivement votre accès à BBDA Events.
-        Vous ne pourrez plus vous connecter avec <strong>{{ current_user.email }}</strong>.
-    </p>
+    <p>Voulez-vous vraiment supprimer votre compte&nbsp;?</p>
     <p class="aide-champ">
-        Vos déclarations déjà enregistrées restent conservées côté BBDA pour le suivi administratif
-        (elles ne sont pas effacées de la base).
+        Vous ne pourrez plus vous connecter avec <strong>{{ current_user.email }}</strong>.
+        Vos déclarations déjà enregistrées restent conservées côté BBDA.
     </p>
-    <form method="post" action="{{ url_for('auth.supprimer_compte') }}">
-        <div class="champ-formulaire">
-            <label for="confirmation">Tapez <strong>SUPPRIMER</strong> pour confirmer</label>
-            <input type="text" id="confirmation" name="confirmation" required autocomplete="off">
-        </div>
-        <div class="heros-public__actions" style="margin-top: 1.5rem;">
-            <a class="bouton-annuler" href="{{ url_for('declarations.tableau_de_bord') }}">Annuler</a>
-            <button type="submit" class="bouton-soumettre" style="background: #8b2e2e;">Supprimer mon compte</button>
+    <form method="post" action="{{ url_for('auth.supprimer_compte') }}" style="margin-top: 1.5rem;">
+        <div class="heros-public__actions">
+            <a class="bouton-annuler" href="{{ url_for('auth.parametres') }}">Non, annuler</a>
+            <button type="submit" name="confirmer" value="oui" class="bouton-soumettre" style="background: #8b2e2e;">
+                Oui, supprimer
+            </button>
         </div>
     </form>
 </div>
