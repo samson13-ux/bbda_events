@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", function () {
     initialiserFormulaireNouvelAgent();
     initialiserMenuLegalPublic();
     initialiserRevealAccueil();
+    initialiserDiaporamaHeros();
 });
 
 function initialiserFermetureMessagesFlash() {
@@ -256,6 +257,54 @@ function initialiserRevealAccueil() {
     );
     blocs.forEach(function (bloc) {
         observateur.observe(bloc);
+    });
+}
+
+function initialiserDiaporamaHeros() {
+    var diaporama = document.querySelector(".heros-public__diaporama");
+    if (!diaporama) {
+        return;
+    }
+    var slides = diaporama.querySelectorAll(".heros-public__slide");
+    var points = document.querySelectorAll(".heros-public__point");
+    if (slides.length < 2) {
+        return;
+    }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        return;
+    }
+
+    var index = 0;
+    var intervalMs = 5500;
+
+    var afficher = function (nouveauIndex) {
+        slides[index].classList.remove("heros-public__slide--actif");
+        if (points[index]) {
+            points[index].classList.remove("heros-public__point--actif");
+        }
+        index = (nouveauIndex + slides.length) % slides.length;
+        slides[index].classList.add("heros-public__slide--actif");
+        if (points[index]) {
+            points[index].classList.add("heros-public__point--actif");
+        }
+    };
+
+    var timer = setInterval(function () {
+        afficher(index + 1);
+    }, intervalMs);
+
+    points.forEach(function (point) {
+        point.addEventListener("click", function () {
+            var cible = parseInt(point.getAttribute("data-slide"), 10);
+            if (isNaN(cible) || cible === index) {
+                return;
+            }
+            clearInterval(timer);
+            afficher(cible);
+            timer = setInterval(function () {
+                afficher(index + 1);
+            }, intervalMs);
+        });
     });
 }
 

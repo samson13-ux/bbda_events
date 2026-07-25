@@ -1270,48 +1270,72 @@ a.carte-stat:hover {
     display: flex;
     align-items: flex-end;
     padding: 4rem 1.25rem 5rem;
-    background:
-        radial-gradient(ellipse at 20% 20%, rgba(217, 164, 65, 0.22), transparent 45%),
-        radial-gradient(ellipse at 80% 10%, rgba(255, 255, 255, 0.08), transparent 40%),
-        linear-gradient(160deg, #1b3a2c 0%, #2f6b4f 48%, #1f4a36 100%);
+    background: #1b3a2c;
     color: #fff;
     overflow: hidden;
+}
+
+.heros-public__diaporama {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+.heros-public__slide {
+    position: absolute;
+    inset: 0;
+    background-position: center center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    opacity: 0;
+    transform: scale(1.04);
+    transition: opacity 1.2s ease, transform 7s ease;
+}
+
+.heros-public__slide--actif {
+    opacity: 1;
+    transform: scale(1);
+    z-index: 1;
 }
 
 .heros-public__voile {
     position: absolute;
     inset: 0;
-    background-image:
-        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-    background-size: 48px 48px;
-    opacity: 0.5;
+    z-index: 2;
+    background:
+        linear-gradient(105deg, rgba(15, 32, 24, 0.88) 0%, rgba(27, 58, 44, 0.72) 42%, rgba(27, 58, 44, 0.45) 100%),
+        linear-gradient(0deg, rgba(15, 32, 24, 0.55) 0%, transparent 45%);
     pointer-events: none;
 }
 
-.heros-public__ambiance {
+.heros-public__points {
     position: absolute;
-    width: 28rem;
-    height: 28rem;
-    right: -6rem;
-    top: 10%;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(217, 164, 65, 0.28), transparent 68%);
-    animation: derive-ambiance 14s ease-in-out infinite alternate;
-    pointer-events: none;
+    z-index: 4;
+    left: 50%;
+    bottom: 1.4rem;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 0.45rem;
 }
 
-@keyframes derive-ambiance {
-    from {
-        transform: translate(0, 0) scale(1);
-    }
-    to {
-        transform: translate(-3rem, 2rem) scale(1.12);
-    }
+.heros-public__point {
+    width: 0.55rem;
+    height: 0.55rem;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.35);
+    cursor: pointer;
+}
+
+.heros-public__point--actif {
+    background: #fff;
+    width: 1.35rem;
 }
 
 .heros-public__contenu {
     position: relative;
+    z-index: 3;
     width: 100%;
     max-width: 72rem;
     margin: 0 auto;
@@ -1513,13 +1537,17 @@ a.carte-stat:hover {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .heros-public__ambiance,
     .heros-public__contenu,
+    .heros-public__slide,
     .reveal-accueil,
     .parcours-public li,
     .carte-evenement {
         animation: none !important;
         transition: none !important;
+    }
+
+    .heros-public__slide {
+        transform: none;
     }
 
     .reveal-accueil,
@@ -1928,13 +1956,6 @@ a.carte-stat:hover {
 
     .section-accueil-entete {
         align-items: flex-start;
-    }
-
-    .heros-public__ambiance {
-        width: 18rem;
-        height: 18rem;
-        right: -4rem;
-        opacity: 0.85;
     }
 }
 

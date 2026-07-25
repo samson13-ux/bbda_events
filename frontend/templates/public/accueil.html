@@ -2,8 +2,13 @@
 {% block titre %}BBDA Events : Plateforme de déclaration et de promotion{% endblock %}
 {% block contenu %}
 <section class="heros-public">
+    <div class="heros-public__diaporama" aria-hidden="true">
+        <div class="heros-public__slide heros-public__slide--actif" style="background-image: url('{{ url_for('static', filename='img/hero/slide-1.jpg') }}');"></div>
+        <div class="heros-public__slide" style="background-image: url('{{ url_for('static', filename='img/hero/slide-2.jpg') }}');"></div>
+        <div class="heros-public__slide" style="background-image: url('{{ url_for('static', filename='img/hero/slide-3.jpg') }}');"></div>
+        <div class="heros-public__slide" style="background-image: url('{{ url_for('static', filename='img/hero/slide-4.jpg') }}');"></div>
+    </div>
     <div class="heros-public__voile"></div>
-    <div class="heros-public__ambiance" aria-hidden="true"></div>
     <div class="heros-public__contenu">
         <p class="heros-public__marque">
             <img src="{{ url_for('static', filename='img/bbda_logo.jpg') }}" alt="Logo BBDA" class="heros-public__logo">
@@ -19,6 +24,12 @@
             {% endif %}
             <a class="bouton-public bouton-public--contour-clair" href="#evenements-a-venir">Voir les événements</a>
         </div>
+    </div>
+    <div class="heros-public__points" aria-hidden="true">
+        <button type="button" class="heros-public__point heros-public__point--actif" data-slide="0" tabindex="-1"></button>
+        <button type="button" class="heros-public__point" data-slide="1" tabindex="-1"></button>
+        <button type="button" class="heros-public__point" data-slide="2" tabindex="-1"></button>
+        <button type="button" class="heros-public__point" data-slide="3" tabindex="-1"></button>
     </div>
 </section>
 
