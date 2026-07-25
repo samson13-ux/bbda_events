@@ -7,11 +7,17 @@ Flask-Mail. Toute exception d'envoi est interceptee et journalisee : elle ne
 doit jamais faire planter l'application (RM-101, RM-102).
 """
 
+import socket
+
 from flask import current_app, url_for
 from flask_mail import Message
 
 from extensions import db, mail
 from models import Notification, Utilisateur
+
+# Sur Render, SMTP Gmail peut rester bloque longtemps : on coupe apres 10 s
+# pour ne pas faire tomber le formulaire (timeout worker / erreur 500).
+SMTP_TIMEOUT_SECONDES = 10
 
 COULEUR_BBDA = "#1F4E79"
 ADRESSE_BBDA = "01 BP 3926 Ouagadougou 01 : Tél. 25 32 47 50"
@@ -71,7 +77,9 @@ def _gabarit_html(sujet, paragraphes):
 def _envoyer(notification, destinataire_email, corps_html, reply_to=None):
     """Tente l'envoi SMTP reel d'une notification deja journalisee, puis met a
     jour son statut selon le resultat (RM-101, RM-102)."""
+    timeout_avant = socket.getdefaulttimeout()
     try:
+        socket.setdefaulttimeout(SMTP_TIMEOUT_SECONDES)
         message = Message(subject=notification.sujet, recipients=[destinataire_email], html=corps_html)
         if reply_to:
             message.reply_to = reply_to
@@ -85,6 +93,8 @@ def _envoyer(notification, destinataire_email, corps_html, reply_to=None):
             notification.id,
             erreur,
         )
+    finally:
+        socket.setdefaulttimeout(timeout_avant)
     return notification
 
 

@@ -133,9 +133,15 @@ def contact():
             message=request.form["message"].strip(),
         )
         db.session.add(message_contact)
-        db.session.flush()
-        notifier_message_contact(message_contact)
+        # Commit d'abord : l'email ne doit pas bloquer l'enregistrement du message
+        # (SMTP Render/Gmail peut etre lent ou coupe).
         db.session.commit()
+        try:
+            notifier_message_contact(message_contact)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            current_app.logger.exception("Notification contact echouee apres enregistrement")
         flash("Votre message a bien été envoyé. Le BBDA vous répondra dans les meilleurs délais.", "succes")
         return redirect(url_for("public.contact"))
 

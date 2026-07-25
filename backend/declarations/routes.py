@@ -240,9 +240,14 @@ def nouvelle():
     db.session.flush()  # obtenir declaration.id avant de creer les artistes lies
 
     _enregistrer_artistes(declaration.id, request.form)
-    notifier_confirmation_declaration(declaration)
-    notifier_nouvelle_declaration_bbda(declaration)
+    # Enregistrer d'abord la declaration : l'email ne doit pas faire echouer le formulaire.
     db.session.commit()
+    try:
+        notifier_confirmation_declaration(declaration)
+        notifier_nouvelle_declaration_bbda(declaration)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
 
     flash("Votre déclaration a bien été envoyée au BBDA. Vous recevrez une confirmation par email.", "succes")
     return redirect(url_for("declarations.tableau_de_bord"))
