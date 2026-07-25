@@ -121,6 +121,7 @@
 
             <div id="section-artistes" class="champ-formulaire">
                 <label>Liste des artistes prévus (optionnel)</label>
+                <p class="aide-champ">Disponible pour tous les types d'événements. Ajoutez une ligne par artiste.</p>
                 <div id="artistes-liste" class="artistes-liste">
                     {% for nom, discipline in (artistes_soumis or []) %}
                     <div class="artiste-ligne">

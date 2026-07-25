@@ -35,6 +35,7 @@
     {% else %}
         <a class="bouton-principal" href="{{ url_for('declarations.nouvelle') }}">+ Nouvelle déclaration</a>
     {% endif %}
+    <a class="bouton-annuler" href="{{ url_for('auth.supprimer_compte') }}">Supprimer mon compte</a>
 </div>
 
 {% if declarations %}

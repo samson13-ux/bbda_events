@@ -9,7 +9,7 @@ import re
 
 import bcrypt
 from flask import current_app, flash, redirect, render_template, request, url_for
-from flask_login import login_required, login_user, logout_user
+from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy.exc import OperationalError, ProgrammingError
 
 from extensions import db
@@ -160,6 +160,32 @@ def connexion():
         _signaler_reconnexion_surveillance(utilisateur)
 
     return redirect(url_for(DESTINATION_PAR_ROLE[utilisateur.role]))
+
+
+@auth_bp.route("/supprimer-compte", methods=["GET", "POST"])
+@login_required
+def supprimer_compte():
+    """Desactive le compte de l'organisateur connecte (soft-delete).
+
+    Les agents/admins ne peuvent pas s'auto-supprimer ici : gestion via
+    l'espace admin. Les declarations restent en base pour le BBDA.
+    """
+    if current_user.role != "organisateur":
+        flash("Seuls les organisateurs peuvent supprimer leur compte depuis cet écran.", "erreur")
+        return redirect(url_for(DESTINATION_PAR_ROLE.get(current_user.role, "public.accueil")))
+
+    if request.method == "GET":
+        return render_template("auth/supprimer_compte.html")
+
+    if request.form.get("confirmation", "").strip().upper() != "SUPPRIMER":
+        flash("Confirmation incorrecte. Tapez SUPPRIMER pour valider.", "erreur")
+        return render_template("auth/supprimer_compte.html"), 400
+
+    current_user.statut = "inactif"
+    db.session.commit()
+    logout_user()
+    flash("Votre compte a été désactivé. Vous ne pouvez plus vous connecter.", "succes")
+    return redirect(url_for("public.accueil"))
 
 
 @auth_bp.route("/deconnexion")

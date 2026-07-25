@@ -23,32 +23,35 @@ function initialiserFermetureMessagesFlash() {
     });
 }
 
-// Formulaire de nouvelle declaration (Prompt 7) : section artistes affichee
-// uniquement pour une manifestation de type Festival, champs de precision
+// Formulaire de nouvelle declaration (Prompt 7) : liste d'artistes toujours
+// visible (tous types de manifestation), champs de precision
 // (qualite "Autre", diffusion "Autres") et lignes d'artiste dynamiques.
 function initialiserFormulaireDeclaration() {
-    var selectNature = document.getElementById("nature_manifestation");
-    var sectionArtistes = document.getElementById("section-artistes");
-    if (selectNature && sectionArtistes) {
-        var basculerSectionArtistes = function () {
-            sectionArtistes.style.display = selectNature.value === "Festival" ? "" : "none";
-        };
-        selectNature.addEventListener("change", basculerSectionArtistes);
-        basculerSectionArtistes();
-    }
-
     basculerPrecision("qualite_autre_radio", "qualite_autre", 'input[name="qualite"]');
     basculerPrecision("diffusion_autres_case", "nature_diffusion_autre", null);
 
     var listeArtistes = document.getElementById("artistes-liste");
     var boutonAjouter = document.getElementById("bouton-ajouter-artiste");
     if (listeArtistes && boutonAjouter) {
+        // Une ligne vide par defaut si aucune n'est deja affichee (retour apres erreur).
+        if (listeArtistes.querySelectorAll(".artiste-ligne").length === 0) {
+            listeArtistes.appendChild(creerLigneArtiste());
+        }
         boutonAjouter.addEventListener("click", function () {
             listeArtistes.appendChild(creerLigneArtiste());
         });
         listeArtistes.addEventListener("click", function (evenement) {
             if (evenement.target.classList.contains("bouton-supprimer-artiste")) {
-                evenement.target.closest(".artiste-ligne").remove();
+                var lignes = listeArtistes.querySelectorAll(".artiste-ligne");
+                var ligne = evenement.target.closest(".artiste-ligne");
+                if (ligne && lignes.length > 1) {
+                    ligne.remove();
+                } else if (ligne) {
+                    // Garde au moins une ligne vide plutot que faire disparaitre la section.
+                    ligne.querySelectorAll("input").forEach(function (champ) {
+                        champ.value = "";
+                    });
+                }
             }
         });
     }

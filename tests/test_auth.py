@@ -154,6 +154,29 @@ def test_deconnexion_puis_acces_refuse(app, client):
     assert "/auth/connexion" in reponse.headers["Location"]
 
 
+def test_organisateur_peut_supprimer_son_compte(app, client):
+    """Un organisateur desactive son compte puis ne peut plus se reconnecter."""
+    creer_utilisateur(app, "organisateur", "orga-del@example.com")
+    client.post("/auth/connexion", data={"email": "orga-del@example.com", "password": "password123"})
+
+    reponse = client.post(
+        "/auth/supprimer-compte",
+        data={"confirmation": "SUPPRIMER"},
+        follow_redirects=False,
+    )
+    assert reponse.status_code == 302
+
+    with app.app_context():
+        utilisateur = Utilisateur.query.filter_by(email="orga-del@example.com").first()
+        assert utilisateur.statut == "inactif"
+
+    reponse = client.post(
+        "/auth/connexion",
+        data={"email": "orga-del@example.com", "password": "password123"},
+    )
+    assert reponse.status_code == 403
+
+
 def test_organisateur_ne_peut_pas_acceder_espace_agent(app, client):
     """RM-005 : un organisateur ne peut pas acceder aux routes /agent/ ou /admin/."""
     creer_utilisateur(app, "organisateur", "orga4@example.com")
