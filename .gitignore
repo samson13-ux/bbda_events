@@ -34,7 +34,11 @@ frontend/static/quittances/*
 .DS_Store
 Thumbs.db
 .claude/
+.qodo/
 .git_staged_list.txt
+tmp_*.html
+*.tmp
+*.bak
 
 # Gros fichiers locaux non necessaires au deploiement
 *.pptx

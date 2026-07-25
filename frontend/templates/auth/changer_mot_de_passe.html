@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block titre %}BBDA Events : Changer mon mot de passe{% endblock %}
+{% block contenu %}
+<div class="bloc-agent" style="max-width: 36rem; margin: 2rem auto;">
+    <h1>Changer mon mot de passe</h1>
+    <p class="aide-champ">Choisissez un mot de passe d’au moins 8 caractères.</p>
+    <form method="post" action="{{ url_for('auth.changer_mot_de_passe') }}" style="margin-top: 1.5rem;">
+        <div class="champ-formulaire">
+            <label for="mot_de_passe_actuel">Mot de passe actuel</label>
+            <input type="password" id="mot_de_passe_actuel" name="mot_de_passe_actuel" required autocomplete="current-password">
+        </div>
+        <div class="champ-formulaire">
+            <label for="nouveau_mot_de_passe">Nouveau mot de passe</label>
+            <input type="password" id="nouveau_mot_de_passe" name="nouveau_mot_de_passe" required minlength="8" autocomplete="new-password">
+        </div>
+        <div class="champ-formulaire">
+            <label for="confirmation">Confirmer le nouveau mot de passe</label>
+            <input type="password" id="confirmation" name="confirmation" required minlength="8" autocomplete="new-password">
+        </div>
+        <div class="heros-public__actions" style="margin-top: 1.5rem;">
+            <a class="bouton-annuler" href="{{ url_for('auth.parametres') }}">Annuler</a>
+            <button type="submit" class="bouton-soumettre">Enregistrer</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

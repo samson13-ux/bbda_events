@@ -154,6 +154,61 @@ def test_deconnexion_puis_acces_refuse(app, client):
     assert "/auth/connexion" in reponse.headers["Location"]
 
 
+def test_production_refuse_secret_key_faible():
+    """Partie 1 : une SECRET_KEY trop faible bloque le demarrage production."""
+    import os
+
+    from app import create_app
+
+    anciennes = {
+        "SECRET_KEY": os.environ.get("SECRET_KEY"),
+        "FLASK_ENV": os.environ.get("FLASK_ENV"),
+        "RENDER": os.environ.get("RENDER"),
+    }
+    os.environ.pop("RENDER", None)
+    os.environ["SECRET_KEY"] = "trop-court"
+    try:
+        with pytest.raises(RuntimeError, match="SECRET_KEY"):
+            create_app("production")
+    finally:
+        for cle, valeur in anciennes.items():
+            if valeur is None:
+                os.environ.pop(cle, None)
+            else:
+                os.environ[cle] = valeur
+
+
+def test_utilisateur_peut_changer_son_mot_de_passe(app, client):
+    """Partie 1 : changement de mot de passe depuis Parametres."""
+    creer_utilisateur(app, "organisateur", "orga-mdp@example.com")
+    client.post("/auth/connexion", data={"email": "orga-mdp@example.com", "password": "password123"})
+
+    reponse = client.post(
+        "/auth/changer-mot-de-passe",
+        data={
+            "mot_de_passe_actuel": "password123",
+            "nouveau_mot_de_passe": "nouveauPass99",
+            "confirmation": "nouveauPass99",
+        },
+        follow_redirects=False,
+    )
+    assert reponse.status_code == 302
+
+    client.get("/auth/deconnexion")
+    refuse = client.post(
+        "/auth/connexion",
+        data={"email": "orga-mdp@example.com", "password": "password123"},
+    )
+    assert refuse.status_code == 401
+
+    ok = client.post(
+        "/auth/connexion",
+        data={"email": "orga-mdp@example.com", "password": "nouveauPass99"},
+        follow_redirects=False,
+    )
+    assert ok.status_code == 302
+
+
 def test_organisateur_peut_supprimer_son_compte(app, client):
     """Un organisateur desactive son compte puis ne peut plus se reconnecter."""
     creer_utilisateur(app, "organisateur", "orga-del@example.com")

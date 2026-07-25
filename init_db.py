@@ -14,6 +14,7 @@ Usage :
                                   # (aucune donnee de demo)
 """
 
+import os
 import sys
 from datetime import datetime, timedelta
 
@@ -37,12 +38,50 @@ from models import (
 )
 
 MOT_DE_PASSE_DEMO = "password123"
+EMAIL_ADMIN_BOOTSTRAP = "admin@bbda.bf"
+LONGUEUR_MIN_ADMIN_PASSWORD = 10
 
 
 def hacher_mot_de_passe(mot_de_passe):
     """Hache un mot de passe en clair avec bcrypt (AI_RULES.md §5)."""
     sel = bcrypt.gensalt()
     return bcrypt.hashpw(mot_de_passe.encode("utf-8"), sel).decode("utf-8")
+
+
+def _est_environnement_production():
+    return os.environ.get("FLASK_ENV") == "production" or bool(os.environ.get("RENDER"))
+
+
+def mot_de_passe_bootstrap_admin():
+    """Mot de passe admin : ADMIN_PASSWORD (env) ou demo locale uniquement."""
+    depuis_env = (os.environ.get("ADMIN_PASSWORD") or "").strip()
+    if depuis_env:
+        if len(depuis_env) < LONGUEUR_MIN_ADMIN_PASSWORD:
+            raise ValueError(
+                f"ADMIN_PASSWORD trop court (minimum {LONGUEUR_MIN_ADMIN_PASSWORD} caractères)."
+            )
+        return depuis_env
+    if _est_environnement_production():
+        raise ValueError(
+            "En production, ADMIN_PASSWORD est obligatoire pour créer/mettre à jour "
+            "l'admin (minimum 10 caractères). Définis-le dans les variables Render."
+        )
+    return MOT_DE_PASSE_DEMO
+
+
+def mettre_a_jour_mot_de_passe_admin():
+    """Met a jour le mot de passe de admin@bbda.bf depuis ADMIN_PASSWORD."""
+    nouveau = (os.environ.get("ADMIN_PASSWORD") or "").strip()
+    if len(nouveau) < LONGUEUR_MIN_ADMIN_PASSWORD:
+        raise ValueError(
+            f"ADMIN_PASSWORD requis (minimum {LONGUEUR_MIN_ADMIN_PASSWORD} caractères)."
+        )
+    admin = Utilisateur.query.filter_by(email=EMAIL_ADMIN_BOOTSTRAP, role="admin").first()
+    if admin is None:
+        raise ValueError(f"Aucun admin trouvé pour {EMAIL_ADMIN_BOOTSTRAP}.")
+    admin.mot_de_passe = hacher_mot_de_passe(nouveau)
+    db.session.commit()
+    print(f"Mot de passe mis à jour pour {EMAIL_ADMIN_BOOTSTRAP}.")
 
 
 def creer_parametres_systeme():
@@ -403,11 +442,12 @@ def seed_base_vide():
     un seul compte admin (necessaire pour creer ensuite agents et orga).
     Aucune declaration, aucun organisateur, aucun evenement public."""
     creer_parametres_systeme()
-    mdp = hacher_mot_de_passe(MOT_DE_PASSE_DEMO)
+    mot_de_passe = mot_de_passe_bootstrap_admin()
+    mdp = hacher_mot_de_passe(mot_de_passe)
     admin = Utilisateur(
         nom="Traore",
         prenom="Awa",
-        email="admin@bbda.bf",
+        email=EMAIL_ADMIN_BOOTSTRAP,
         mot_de_passe=mdp,
         role="admin",
     )
@@ -416,7 +456,10 @@ def seed_base_vide():
     print("Base videe et reinitialisee (etat neuf).")
     print("  - Tables recrees")
     print("  - Parametres systeme (SEUIL_ARRIERE, DELAI_NOTIFICATION)")
-    print(f"  - 1 admin bootstrap : admin@bbda.bf / {MOT_DE_PASSE_DEMO}")
+    if mot_de_passe == MOT_DE_PASSE_DEMO:
+        print(f"  - 1 admin bootstrap : {EMAIL_ADMIN_BOOTSTRAP} / {MOT_DE_PASSE_DEMO} (dev seulement)")
+    else:
+        print(f"  - 1 admin bootstrap : {EMAIL_ADMIN_BOOTSTRAP} / (mot de passe ADMIN_PASSWORD)")
     print("  - Aucun agent, organisateur, declaration ni evenement")
     print("Tu peux maintenant creer agents (espace admin) et organisateurs")
     print("(inscription publique) pour retester le parcours complet.")
@@ -460,16 +503,42 @@ def main():
     # --bootstrap : pour Render (sans Shell payant). Cree les tables + 1 admin
     # si la base est vide. Ne supprime jamais les donnees existantes.
     bootstrap = "--bootstrap" in sys.argv
-    app = create_app()
+    set_admin_password = "--set-admin-password" in sys.argv
+    # En bootstrap Render, preferer production pour valider SECRET_KEY.
+    env_app = None
+    if bootstrap or set_admin_password:
+        if os.environ.get("RENDER") or os.environ.get("FLASK_ENV") == "production":
+            env_app = "production"
+    app = create_app(env_app)
 
     with app.app_context():
+        if set_admin_password:
+            try:
+                mettre_a_jour_mot_de_passe_admin()
+            except ValueError as erreur:
+                raise SystemExit(str(erreur)) from erreur
+            return
+
         if bootstrap:
             db.create_all()
             if Utilisateur.query.first() is None:
                 print("Bootstrap : base vide, creation admin uniquement...")
-                seed_base_vide()
+                try:
+                    seed_base_vide()
+                except ValueError as erreur:
+                    raise SystemExit(str(erreur)) from erreur
             else:
                 print("Bootstrap : base deja initialisee, rien a faire.")
+            # Option one-shot Render (sans Shell) : forcer le nouveau MDP admin.
+            if os.environ.get("FORCE_ADMIN_PASSWORD_RESET") == "1":
+                try:
+                    mettre_a_jour_mot_de_passe_admin()
+                    print(
+                        "FORCE_ADMIN_PASSWORD_RESET appliqué. "
+                        "Retire cette variable de Render après le déploiement."
+                    )
+                except ValueError as erreur:
+                    raise SystemExit(str(erreur)) from erreur
             return
 
         if reset or vide:

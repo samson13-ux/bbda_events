@@ -8,10 +8,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+SECRET_KEY_DEV_PAR_DEFAUT = "dev-key-a-remplacer"
+
+
 class Config:
     """Configuration commune a tous les environnements."""
 
-    SECRET_KEY = os.environ.get("SECRET_KEY", "dev-key-a-remplacer")
+    SECRET_KEY = os.environ.get("SECRET_KEY", SECRET_KEY_DEV_PAR_DEFAUT)
     # Render fournit souvent postgres://... ; SQLAlchemy + psycopg veulent postgresql+psycopg://
     _database_url = os.environ.get("DATABASE_URL", "")
     if _database_url.startswith("postgres://"):
@@ -48,12 +51,26 @@ class DevelopmentConfig(Config):
 
 
 class ProductionConfig(Config):
-    """Configuration utilisee en production (ex. PythonAnywhere)."""
+    """Configuration utilisee en production (Render, PythonAnywhere)."""
 
     DEBUG = False
-    # Evite les sessions / cookies cassés derrière HTTPS (PythonAnywhere, tunnels).
+    # Cookies de session durcis derriere HTTPS.
     SESSION_COOKIE_SECURE = True
     REMEMBER_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
+    REMEMBER_COOKIE_SAMESITE = "Lax"
+
+    @classmethod
+    def valider_secret_key(cls):
+        """Refuse une cle faible ou absente en production."""
+        cle = os.environ.get("SECRET_KEY", "").strip()
+        if not cle or cle == SECRET_KEY_DEV_PAR_DEFAUT or len(cle) < 24:
+            raise RuntimeError(
+                "SECRET_KEY production invalide : définis une chaîne aléatoire "
+                "d'au moins 24 caractères dans les variables d'environnement."
+            )
 
 
 class TestingConfig(Config):

@@ -8,7 +8,8 @@
             <a href="{{ url_for('admin.statistiques') }}" class="{{ 'actif' if request.endpoint == 'admin.statistiques' else '' }}">Statistiques</a>
             <a href="{{ url_for('admin.messages_contact') }}" class="{{ 'actif' if request.endpoint and 'messages_contact' in request.endpoint else '' }}">Messages contact</a>
             <a href="{{ url_for('admin.utilisateurs') }}" class="{{ 'actif' if request.endpoint == 'admin.utilisateurs' else '' }}">Utilisateurs</a>
-            <a href="{{ url_for('admin.parametres') }}" class="{{ 'actif' if request.endpoint == 'admin.parametres' else '' }}">Paramètres</a>
+            <a href="{{ url_for('admin.parametres') }}" class="{{ 'actif' if request.endpoint == 'admin.parametres' else '' }}">Paramètres système</a>
+            <a href="{{ url_for('auth.parametres') }}">Mon compte</a>
             <a href="{{ url_for('auth.deconnexion') }}">Déconnexion</a>
         </nav>
     </aside>

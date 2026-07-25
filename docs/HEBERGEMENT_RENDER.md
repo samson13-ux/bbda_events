@@ -19,48 +19,63 @@
 3. Reglages :
    - **Runtime** : Python
    - **Build Command** : `pip install -r requirements.txt`
-   - **Start Command** : `gunicorn "app:create_app()" --bind 0.0.0.0:$PORT --workers 2 --timeout 120`
+   - **Start Command** : laisse le `Procfile` (bootstrap + gunicorn production)
    - Plan **Free**
 
-## Etape 3 — Variables d'environnement
+## Etape 3 — Variables d'environnement (Partie 1 securite)
 
 Dans le Web Service → **Environment** :
 
-| Cle | Valeur |
-|-----|--------|
-| `FLASK_ENV` | `production` |
-| `SECRET_KEY` | longue chaine aleatoire |
-| `DATABASE_URL` | URL Postgres Render (voir ci-dessous) |
-| `MAIL_USERNAME` | ton email Gmail |
-| `MAIL_PASSWORD` | mot de passe d'application |
-| `PUBLIC_BASE_URL` | `https://TON-SERVICE.onrender.com` |
+| Cle | Valeur | Obligatoire |
+|-----|--------|-------------|
+| `FLASK_ENV` | `production` | Oui |
+| `SECRET_KEY` | chaine aleatoire **≥ 24 caracteres** | Oui (sinon l'app refuse de demarrer) |
+| `DATABASE_URL` | URL Postgres Render | Oui |
+| `ADMIN_PASSWORD` | mot de passe admin fort **≥ 10 caracteres** | Oui pour creer/reset admin |
+| `MAIL_USERNAME` | email Gmail | Oui pour emails |
+| `MAIL_PASSWORD` | mot de passe d'application Gmail | Oui pour emails |
+| `PUBLIC_BASE_URL` | `https://bbda-events.onrender.com` | Oui pour liens emails |
 
 ### Astuce DATABASE_URL
 
-Render donne parfois `postgres://...`. SQLAlchemy prefere `postgresql://...`.
-Si besoin, remplace le debut :
-
-`postgres://` → `postgresql+psycopg://`
-
-(ou `postgresql://` selon le driver installe).
+Render donne parfois `postgres://...`. L'app convertit automatiquement vers `postgresql+psycopg://` et ajoute `sslmode=require` si besoin.
 
 ## Etape 4 — Premier demarrage + admin
 
 Le **Shell Render est payant** sur le plan gratuit.  
-Le `Procfile` lance automatiquement au demarrage :
+Le `Procfile` lance automatiquement :
 
 ```bash
 python init_db.py --bootstrap
 ```
 
-Cela cree les tables + l'admin **uniquement si la base est vide**  
-(ne detruit pas les donnees aux redeploiements suivants).
+Cela cree les tables + l'admin **uniquement si la base est vide**.
 
-Admin : `admin@bbda.bf` / `password123`
+### Changer le mot de passe admin existant (sans Shell)
+
+1. Ajoute / mets a jour `ADMIN_PASSWORD` (fort, ≥ 10 caracteres)
+2. Ajoute temporairement `FORCE_ADMIN_PASSWORD_RESET=1`
+3. **Manual Deploy** → attendre le succes
+4. **Supprime** `FORCE_ADMIN_PASSWORD_RESET` (important)
+5. Connecte-toi avec `admin@bbda.bf` + le nouveau mot de passe
+6. Optionnel : **Paramètres → Changer mon mot de passe**
+
+## Checklist Partie 1 — avant les tests utilisateurs
+
+- [ ] `SECRET_KEY` long et unique (pas la valeur d'exemple)
+- [ ] `FLASK_ENV=production`
+- [ ] `PUBLIC_BASE_URL` pointe vers l'URL Render HTTPS
+- [ ] `ADMIN_PASSWORD` fort defini
+- [ ] Mot de passe admin demarre (`password123`) **remplace** via reset one-shot ou ecran Paramètres
+- [ ] `MAIL_PASSWORD` = mot de passe d'application (pas le vrai mdp Gmail)
+- [ ] Connexion admin OK
+- [ ] Connexion organisateur de test OK
+- [ ] Deconnexion OK
+- [ ] Accueil public OK apres cold start
 
 ## Etape 5 — Tester
 
-Ouvre `https://TON-SERVICE.onrender.com`
+Ouvre `https://bbda-events.onrender.com`
 
 Sur le plan gratuit, le premier chargement apres inactivite peut prendre ~1 minute.
 

@@ -79,7 +79,7 @@ source venv/bin/activate
 python init_db.py --vide
 ```
 
-Compte admin : `admin@bbda.bf` / `password123`  
+Compte admin bootstrap (à changer dès le premier login) : `admin@bbda.bf` / mot de passe défini dans `init_db.py` (`MOT_DE_PASSE_DEMO`).  
 (change le mot de passe apres la premiere connexion)
 
 ## Etape 6 — Web app

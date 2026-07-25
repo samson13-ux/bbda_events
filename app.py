@@ -5,18 +5,24 @@ import os
 from flask import Flask
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from config import config_by_name
+from config import ProductionConfig, config_by_name
 from extensions import db, login_manager, mail
 
 
 def create_app(env=None):
     """Cree et configure l'instance Flask de l'application.
 
-    :param env: nom de l'environnement ('development' ou 'production').
-        Si non fourni, lu depuis la variable FLASK_ENV (defaut: development).
+    :param env: nom de l'environnement ('development', 'production' ou 'testing').
+        Si non fourni, lu depuis FLASK_ENV / FLASK_CONFIG, sinon Render→production.
     :return: instance Flask configuree, avec extensions et blueprints enregistres.
     """
-    env = env or os.environ.get("FLASK_ENV", "development")
+    env = env or os.environ.get("FLASK_ENV") or os.environ.get("FLASK_CONFIG")
+    # Render et proxies HTTPS : forcer production si l'env n'est pas explicite.
+    if not env:
+        env = "production" if os.environ.get("RENDER") else "development"
+
+    if env == "production":
+        ProductionConfig.valider_secret_key()
 
     app = Flask(
         __name__,
@@ -67,6 +73,9 @@ def _bootstrap_schema_si_besoin(app):
 
                 app.logger.info("Bootstrap : base vide, creation admin...")
                 seed_base_vide()
+        except ValueError as erreur:
+            db.session.rollback()
+            app.logger.error("Bootstrap admin refuse : %s", erreur)
         except Exception:
             # Ne bloque pas le demarrage : les logs Render montreront la cause.
             db.session.rollback()

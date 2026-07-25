@@ -8,6 +8,7 @@
             <a href="{{ url_for('agent.declarations') }}" class="{{ 'actif' if request.endpoint == 'agent.declarations' else '' }}">Déclarations</a>
             <a href="{{ url_for('agent.arrieres') }}" class="{{ 'actif' if request.endpoint == 'agent.arrieres' else '' }}">Arriérés</a>
             <a href="{{ url_for('agent.surveillance') }}" class="{{ 'actif' if request.endpoint == 'agent.surveillance' else '' }}">Surveillance</a>
+            <a href="{{ url_for('auth.parametres') }}" class="{{ 'actif' if request.endpoint and request.endpoint.startswith('auth.') else '' }}">Mon compte</a>
             <a href="{{ url_for('auth.deconnexion') }}">Déconnexion</a>
         </nav>
     </aside>

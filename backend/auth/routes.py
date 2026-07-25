@@ -168,11 +168,44 @@ def connexion():
 @auth_bp.route("/parametres")
 @login_required
 def parametres():
-    """Page parametres du compte organisateur (suppression, infos)."""
-    if current_user.role != "organisateur":
-        flash("Les paramètres compte organisateur ne sont pas disponibles pour ce rôle.", "erreur")
-        return redirect(url_for(DESTINATION_PAR_ROLE.get(current_user.role, "public.accueil")))
-    return render_template("auth/parametres.html")
+    """Page parametres du compte (infos, mot de passe, suppression orga)."""
+    return render_template(
+        "auth/parametres.html",
+        espace_url=url_for(DESTINATION_PAR_ROLE.get(current_user.role, "public.accueil")),
+    )
+
+
+@auth_bp.route("/changer-mot-de-passe", methods=["GET", "POST"])
+@login_required
+def changer_mot_de_passe():
+    """Permet a tout utilisateur connecte de changer son mot de passe."""
+    if request.method == "GET":
+        return render_template("auth/changer_mot_de_passe.html")
+
+    actuel = request.form.get("mot_de_passe_actuel", "")
+    nouveau = request.form.get("nouveau_mot_de_passe", "")
+    confirmation = request.form.get("confirmation", "")
+
+    if not _mot_de_passe_valide(actuel, current_user.mot_de_passe):
+        flash("Mot de passe actuel incorrect.", "erreur")
+        return render_template("auth/changer_mot_de_passe.html"), 400
+
+    if len(nouveau) < 8:
+        flash("Le nouveau mot de passe doit contenir au moins 8 caractères.", "erreur")
+        return render_template("auth/changer_mot_de_passe.html"), 400
+
+    if nouveau != confirmation:
+        flash("La confirmation ne correspond pas au nouveau mot de passe.", "erreur")
+        return render_template("auth/changer_mot_de_passe.html"), 400
+
+    if nouveau == actuel:
+        flash("Le nouveau mot de passe doit être différent de l'actuel.", "erreur")
+        return render_template("auth/changer_mot_de_passe.html"), 400
+
+    current_user.mot_de_passe = _hacher(nouveau)
+    db.session.commit()
+    flash("Mot de passe mis à jour. Utilisez-le dès la prochaine connexion.", "succes")
+    return redirect(url_for("auth.parametres"))
 
 
 @auth_bp.route("/supprimer-compte", methods=["GET", "POST"])
