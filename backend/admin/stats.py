@@ -1,4 +1,4 @@
-"""Statistiques avancees pour l'espace administrateur (Prompt 17).
+"""Statistiques avancees pour l'espace administrateur.
 
 Les fonctions de ce module sont purement calculatoires : elles n'ecrivent
 jamais en base. Elles sont appelees depuis la route GET /admin/statistiques

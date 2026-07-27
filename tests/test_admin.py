@@ -1,4 +1,4 @@
-"""Tests de l'espace administrateur (Prompt 16) : tableau de bord, gestion
+"""Tests de l'espace administrateur : tableau de bord, gestion
 des comptes utilisateurs (creation d'agent, activation/desactivation), et
 parametres systeme (RM-002, RM-060 a RM-076, RM-090 a RM-103 §9)."""
 

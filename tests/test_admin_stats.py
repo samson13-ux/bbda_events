@@ -1,4 +1,4 @@
-"""Tests des statistiques avancees administrateur (Prompt 17) : fonctions
+"""Tests des statistiques avancees administrateur : fonctions
 de calcul dans admin/stats.py et page /admin/statistiques."""
 
 from datetime import datetime, timedelta

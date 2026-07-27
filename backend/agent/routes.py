@@ -1,18 +1,13 @@
 """Routes agent.
 
-Tableau de bord (Prompt 9) : declarations urgentes et en cours,
-statistiques du jour/mois, alertes de surveillance et d'arrieres. Liste
-filtrable des declarations et suivi des alertes de surveillance construits
-en support direct du tableau de bord. Traitement d'une declaration —
-historique de l'organisateur, fixation du montant, mise en attente
-(Prompt 10) implemente. Confirmation de paiement et generation de la
-quittance (Prompt 11) implementees, avec generation reelle du PDF
-(Prompt 12). Un arriere est cree via le moteur de gestion des arrieres
-(`backend/arrieres/moteur.py`, Prompt 14) en cas de paiement partiel, et
-bloque automatiquement le compte de l'organisateur si le seuil est
-franchi. Interface complete de gestion des arrieres et de la surveillance
-(debloquer/bloquer un compte, envoyer les rappels, marquer/lever une
-surveillance) implementee au Prompt 15.
+Tableau de bord : declarations urgentes et en cours, statistiques du
+jour/mois, alertes de surveillance et d'arrieres. Traitement d'une
+declaration (historique, fixation du montant, mise en attente).
+Confirmation de paiement et generation de la quittance PDF. Un arriere
+est cree via `backend/arrieres/moteur.py` en cas de paiement partiel, avec
+blocage automatique du compte si le seuil est franchi. Interface de
+gestion des arrieres et de la surveillance (debloquer/bloquer, rappels,
+marquer/lever une surveillance).
 """
 
 from datetime import datetime
@@ -523,7 +518,7 @@ def _dernier_rappel(organisateur_id):
 def arrieres():
     """Liste des organisateurs en difficulte, avec actions de gestion
     (debloquer, bloquer, marquer sous surveillance, rappels) — RM-060 a
-    RM-076, s'appuyant sur le moteur d'arrieres du Prompt 14."""
+    RM-076, via le moteur d'arrieres."""
     organisateurs = Organisateur.query.filter(Organisateur.statut_compte != "actif").all()
     lignes = [
         {

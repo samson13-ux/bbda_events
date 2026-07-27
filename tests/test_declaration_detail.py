@@ -1,4 +1,4 @@
-"""Tests de la page de detail d'une declaration cote organisateur (Prompt 8) :
+"""Tests de la page de detail d'une declaration cote organisateur :
 frise chronologique, encadre du montant a payer, bouton de telechargement de
 la quittance, liste des artistes (RM-030 a RM-054)."""
 
@@ -160,7 +160,7 @@ def test_quittance_delivree_affiche_bouton_telechargement(app, client):
 
 def test_declaration_autrui_renvoie_404(app, client):
     """404 (pas 403) si la declaration n'appartient pas a l'organisateur
-    connecte, conformement a la spec du Prompt 8."""
+    connecte."""
     autre_organisateur_id = creer_organisateur(app, "autre@example.com")
     declaration_id = creer_declaration(app, autre_organisateur_id, "nouvelle")
     creer_organisateur(app, "moi@example.com")
@@ -172,7 +172,7 @@ def test_declaration_autrui_renvoie_404(app, client):
 
 
 def test_indicateur_visibilite_en_attente(app, client):
-    """Prompt 19 : promoteur sans quittance voit le message d'attente."""
+    """Promoteur sans quittance voit le message d'attente."""
     organisateur_id = creer_organisateur(app, "orga_promo@example.com")
     declaration_id = creer_declaration(app, organisateur_id, "nouvelle", promouvoir=True)
     connecter(client, "orga_promo@example.com")
@@ -182,7 +182,7 @@ def test_indicateur_visibilite_en_attente(app, client):
 
 
 def test_indicateur_visibilite_publique(app, client):
-    """Prompt 19 : apres quittance, lien vers la page publique."""
+    """Apres quittance, lien vers la page publique."""
     organisateur_id = creer_organisateur(app, "orga_visible@example.com")
     declaration_id = creer_declaration(app, organisateur_id, "quittance_delivree", promouvoir=True)
     with app.app_context():

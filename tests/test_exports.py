@@ -1,5 +1,5 @@
 """Tests de la generation et du telechargement de la quittance PDF
-(Prompt 12, RM-050 a RM-054)."""
+(RM-050 a RM-054)."""
 
 import os
 from datetime import datetime

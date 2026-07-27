@@ -1,4 +1,4 @@
-"""Tests de la face publique (Prompt 18) : accueil, evenements, support,
+"""Tests de la face publique : accueil, evenements, support,
 contact et pages legales accessibles sans connexion (RM-090 a RM-093)."""
 
 from datetime import datetime, timedelta

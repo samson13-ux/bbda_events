@@ -1,6 +1,5 @@
 """Moteur de gestion des arrieres (creation, seuils, blocage, deblocage,
-surveillance) — implementation complete des regles RM-060 a RM-084
-(Prompt 14 du guide de dev).
+surveillance) — regles RM-060 a RM-084.
 
 Les parametres SEUIL_ARRIERE et DELAI_NOTIFICATION sont configurables par
 l'administrateur (table `parametres_systeme`, voir docs/REGLES_METIER.md
@@ -40,8 +39,7 @@ def delai_notification():
 
 
 def verifier_arriere(organisateur_id):
-    """FONCTION 1 (RM-060, RM-073) : etat des arrieres actifs d'un
-    organisateur.
+    """Etat des arrieres actifs d'un organisateur (RM-060, RM-073).
 
     :return: dict {montant_total_du, nombre_arrieres, bloquant}
     """
@@ -55,9 +53,9 @@ def verifier_arriere(organisateur_id):
 
 
 def creer_arriere(declaration_id, montant_du):
-    """FONCTION 2 (RM-062, RM-063) : cree un arriere lie a une declaration
-    (echeance a J+DELAI_NOTIFICATION), puis marque le compte 'en arriere'
-    si le total des arrieres actifs franchit le seuil bloquant (RM-073)."""
+    """Cree un arriere lie a une declaration (echeance a J+DELAI_NOTIFICATION),
+    puis marque le compte 'en arriere' si le total des arrieres actifs
+    franchit le seuil bloquant (RM-062, RM-063, RM-073)."""
     from models import Declaration
 
     declaration = Declaration.query.get(declaration_id)
@@ -77,9 +75,8 @@ def creer_arriere(declaration_id, montant_du):
 
 
 def verifier_et_envoyer_rappels():
-    """FONCTION 3 (RM-070 a RM-072) : envoie un rappel par email pour chaque
-    arriere en retard n'ayant pas ete relance depuis au moins
-    DELAI_NOTIFICATION jours.
+    """Envoie un rappel par email pour chaque arriere en retard n'ayant pas
+    ete relance depuis au moins DELAI_NOTIFICATION jours (RM-070 a RM-072).
 
     :return: nombre de rappels effectivement envoyes.
     """
@@ -105,22 +102,22 @@ def verifier_et_envoyer_rappels():
 
 
 def marquer_compte_arriere(organisateur_id):
-    """FONCTION 4 (RM-073) : signale automatiquement un compte dont
-    l'arriere franchit le seuil bloquant."""
+    """Signale automatiquement un compte dont l'arriere franchit le seuil
+    bloquant (RM-073)."""
     organisateur = Organisateur.query.get(organisateur_id)
     organisateur.statut_compte = "arriere"
 
 
 def bloquer_compte(organisateur_id):
-    """FONCTION 5 (RM-075) : gel manuel d'un compte par un agent, apres
-    relances restees sans effet."""
+    """Gel manuel d'un compte par un agent, apres relances restees sans
+    effet (RM-075)."""
     organisateur = Organisateur.query.get(organisateur_id)
     organisateur.statut_compte = "bloque"
 
 
 def debloquer_compte(organisateur_id):
-    """FONCTION 6 (RM-075, RM-076) : reactive un compte et solde tous ses
-    arrieres en attente."""
+    """Reactive un compte et solde tous ses arrieres en attente
+    (RM-075, RM-076)."""
     organisateur = Organisateur.query.get(organisateur_id)
     organisateur.statut_compte = "actif"
     maintenant = datetime.utcnow()
@@ -130,8 +127,8 @@ def debloquer_compte(organisateur_id):
 
 
 def marquer_surveillance(organisateur_id, agent_id, commentaire=""):
-    """FONCTION 7 (RM-080) : place un compte sous surveillance (cas :
-    organisateur introuvable)."""
+    """Place un compte sous surveillance (cas : organisateur introuvable)
+    (RM-080)."""
     organisateur = Organisateur.query.get(organisateur_id)
     organisateur.statut_compte = "surveillance"
     db.session.add(
@@ -140,8 +137,8 @@ def marquer_surveillance(organisateur_id, agent_id, commentaire=""):
 
 
 def lever_surveillance(organisateur_id, agent_id):
-    """FONCTION 8 (RM-084) : leve la surveillance d'un compte et solde ses
-    alertes encore non traitees."""
+    """Leve la surveillance d'un compte et solde ses alertes encore non
+    traitees (RM-084)."""
     organisateur = Organisateur.query.get(organisateur_id)
     organisateur.statut_compte = "actif"
     maintenant = datetime.utcnow()
@@ -152,7 +149,7 @@ def lever_surveillance(organisateur_id, agent_id):
 
 
 def verifier_connexion_surveillance(organisateur_id):
-    """FONCTION 9 (RM-081) : a appeler a chaque connexion d'un organisateur.
+    """A appeler a chaque connexion d'un organisateur (RM-081).
     Si son compte est sous surveillance, cree une nouvelle alerte et
     notifie tous les agents/administrateurs actifs.
 
@@ -168,8 +165,8 @@ def verifier_connexion_surveillance(organisateur_id):
 
 
 def integrer_arrieres_dans_quittance(quittance):
-    """FONCTION 10 (RM-050 a RM-054) : reporte le montant des arrieres
-    actifs de l'organisateur sur la quittance delivree."""
+    """Reporte le montant des arrieres actifs de l'organisateur sur la
+    quittance delivree (RM-050 a RM-054)."""
     etat = verifier_arriere(quittance.declaration.organisateur_id)
     quittance.droit_arriere = etat["montant_total_du"]
     quittance.droit_exigible = (quittance.droit_annuel or 0) + quittance.droit_arriere

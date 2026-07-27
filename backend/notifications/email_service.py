@@ -1,4 +1,4 @@
-"""Notifications automatiques envoyees aux utilisateurs (Prompt 13).
+"""Notifications automatiques envoyees aux utilisateurs.
 
 Flux :
 1. Journalisation en base (`notification`, statut `en_attente`) — RM-100
@@ -299,8 +299,7 @@ def _boite_dediee_et_admin():
 
 
 def notifier_confirmation_declaration(declaration):
-    """FONCTION 1 (RM-014) : confirme a l'organisateur la reception de sa
-    declaration."""
+    """Confirme a l'organisateur la reception de sa declaration (RM-014)."""
     utilisateur = declaration.organisateur.utilisateur
     sujet = f"BBDA Events : Déclaration #{declaration.id} reçue avec succès"
     paragraphes = [
@@ -372,8 +371,7 @@ def notifier_nouvelle_declaration_bbda(declaration):
 
 
 def notifier_montant_fixe(declaration):
-    """FONCTION 2 (RM-033) : informe l'organisateur du montant a payer une
-    fois fixe par l'agent."""
+    """Informe l'organisateur du montant a payer une fois fixe par l'agent (RM-033)."""
     utilisateur = declaration.organisateur.utilisateur
     evaluation = declaration.evaluation
     sujet = "BBDA Events : Montant de votre redevance fixé"
@@ -403,8 +401,8 @@ def notifier_montant_fixe(declaration):
 
 
 def notifier_quittance_disponible(declaration):
-    """FONCTION 3 (RM-054) : informe l'organisateur que sa quittance est
-    prete, avec le PDF en piece jointe + lien vers l'espace (apres connexion)."""
+    """Informe l'organisateur que sa quittance est prete, avec le PDF en
+    piece jointe et un lien vers l'espace (apres connexion) (RM-054)."""
     from backend.exports.pdf_generator import assurer_fichier_pdf
 
     utilisateur = declaration.organisateur.utilisateur
@@ -467,8 +465,8 @@ def notifier_quittance_disponible(declaration):
 
 
 def notifier_rappel_arriere(arriere):
-    """FONCTION 4 (RM-06x) : rappelle a l'organisateur qu'un arriere de
-    paiement est en attente et qu'il bloque toute nouvelle declaration."""
+    """Rappelle a l'organisateur qu'un arriere de paiement est en attente
+    et qu'il bloque toute nouvelle declaration (RM-06x)."""
     utilisateur = arriere.organisateur.utilisateur
     sujet = "BBDA Events : Rappel d'arriéré de paiement en attente"
     paragraphes = [
@@ -497,8 +495,8 @@ def notifier_rappel_arriere(arriere):
 
 
 def notifier_alerte_surveillance(organisateur):
-    """FONCTION 5 (RM-081) : alerte tous les agents/administrateurs quand un
-    compte organisateur sous surveillance se reconnecte."""
+    """Alerte tous les agents/administrateurs quand un compte organisateur
+    sous surveillance se reconnecte (RM-081)."""
     from datetime import datetime
 
     utilisateur_organisateur = organisateur.utilisateur
@@ -532,8 +530,8 @@ def notifier_alerte_surveillance(organisateur):
 
 
 def notifier_declaration_bloquee(organisateur):
-    """FONCTION 6 : informe l'organisateur que son compte est bloque et
-    l'empeche de soumettre une nouvelle declaration (RM-010, RM-074)."""
+    """Informe l'organisateur que son compte est bloque et l'empeche de
+    soumettre une nouvelle declaration (RM-010, RM-074)."""
     utilisateur = organisateur.utilisateur
     total_du = sum(a.montant_du for a in organisateur.arrieres if a.statut == "en_attente")
     sujet = "BBDA Events : Déclaration bloquée"
@@ -563,7 +561,7 @@ def notifier_declaration_bloquee(organisateur):
 
 def notifier_evenement_publie(declaration):
     """Informe l'organisateur que son evenement est visible sur la page
-    publique BBDA Events (apres delivrance de la quittance, Prompt 19)."""
+    publique BBDA Events (apres delivrance de la quittance)."""
     utilisateur = declaration.organisateur.utilisateur
     sujet = f"BBDA Events : Votre événement est en ligne : {declaration.nom_artiste_evenement}"
     try:

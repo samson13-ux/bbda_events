@@ -1,4 +1,4 @@
-"""Tests du tableau de bord agent (Prompt 9) : declarations urgentes et en
+"""Tests du tableau de bord agent : declarations urgentes et en
 cours, statistiques, alertes de surveillance et d'arrieres (RM-003, RM-004,
 RM-073, RM-080 a RM-084)."""
 

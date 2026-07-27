@@ -1,8 +1,8 @@
 """Routes des declarations.
 
-Tableau de bord organisateur (Prompt 6), formulaire de nouvelle declaration
-(Prompt 7) avec section Promotion publique (Prompt 19), page de detail
-(Prompt 8) enrichie de l'indicateur de visibilite publique.
+Tableau de bord organisateur, formulaire de nouvelle declaration avec
+section Promotion publique, page de detail avec indicateur de visibilite
+publique.
 """
 
 import os
@@ -323,7 +323,7 @@ def _construire_declaration(organisateur_id, donnees, affiche_path=None):
 @role_required("organisateur")
 def nouvelle():
     """Formulaire de nouvelle declaration d'evenement (RM-010 a RM-014),
-    avec option de promotion publique (Prompt 19)."""
+    avec option de promotion publique."""
     if current_user.organisateur.statut_compte in COMPTES_BLOQUANTS:
         flash("Votre compte est bloqué : vous ne pouvez pas soumettre de nouvelle déclaration.", "erreur")
         notifier_declaration_bloquee(current_user.organisateur)

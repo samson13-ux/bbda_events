@@ -26,7 +26,7 @@ function initialiserFermetureMessagesFlash() {
     });
 }
 
-// Formulaire de nouvelle declaration (Prompt 7) : liste d'artistes toujours
+// Formulaire de nouvelle declaration : liste d'artistes toujours
 // visible (tous types de manifestation), champs de precision
 // (qualite "Autre", diffusion "Autres") et lignes d'artiste dynamiques.
 function initialiserFormulaireDeclaration() {
@@ -59,7 +59,7 @@ function initialiserFormulaireDeclaration() {
         });
     }
 
-    // Section Promotion (Prompt 19) : champs affiches uniquement si la case
+    // Section Promotion : champs affiches uniquement si la case
     // "promouvoir" est cochee.
     var casePromouvoir = document.getElementById("promouvoir_case");
     var sectionPromotion = document.getElementById("section-promotion");
@@ -103,7 +103,7 @@ function creerLigneArtiste() {
     return ligne;
 }
 
-// Horloge du tableau de bord agent (Prompt 9) : date et heure mises a jour
+// Horloge du tableau de bord agent : date et heure mises a jour
 // chaque seconde, cote client uniquement (aucune donnee metier).
 function initialiserHorlogeAgent() {
     var horloge = document.getElementById("horloge-agent");
@@ -125,7 +125,7 @@ function initialiserHorlogeAgent() {
     setInterval(mettreAJour, 1000);
 }
 
-// Page de traitement agent (Prompt 10) : total tarif + redevance recalcule
+// Page de traitement agent : total tarif + redevance recalcule
 // en temps reel, sans recharger la page.
 function initialiserTotalMontant() {
     var champTarif = document.getElementById("tarif");
@@ -143,7 +143,7 @@ function initialiserTotalMontant() {
     recalculer();
 }
 
-// Page de confirmation de paiement agent (Prompt 11) : le N de cheque et
+// Page de confirmation de paiement agent : le N de cheque et
 // le reste a payer n'apparaissent que si pertinents.
 function initialiserFormulairePaiement() {
     basculerPrecision("mode-cheque-radio", "champ-numero-cheque", 'input[name="mode_paiement"]');
@@ -178,7 +178,7 @@ function initialiserFormulairePaiement() {
     }
 }
 
-// Page utilisateurs de l'espace admin (Prompt 16) : bascule entre les
+// Page utilisateurs de l'espace admin : bascule entre les
 // onglets "Organisateurs" et "Agents".
 function initialiserOngletsUtilisateurs() {
     var boutons = document.querySelectorAll(".onglet-bouton");
@@ -202,7 +202,7 @@ function initialiserOngletsUtilisateurs() {
     });
 }
 
-// Page utilisateurs de l'espace admin (Prompt 16) : affiche/masque le
+// Page utilisateurs de l'espace admin : affiche/masque le
 // formulaire de creation d'un compte agent.
 function initialiserFormulaireNouvelAgent() {
     var boutonAfficher = document.getElementById("bouton-afficher-formulaire-agent");

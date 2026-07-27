@@ -1,4 +1,4 @@
-"""Tests fonctionnels consolides (Prompt 20) : parcours critiques pour la
+"""Tests fonctionnels consolides : parcours critiques pour la
 soutenance — face publique, authentification, declarations, paiement,
 promotion, securite par role et arrieres.
 """

@@ -1,4 +1,4 @@
-"""Tests du formulaire de nouvelle declaration (Prompt 7) : soumission
+"""Tests du formulaire de nouvelle declaration : soumission
 nominale, artistes lies (Festival), validation des champs obligatoires et
 de la date, blocage d'un compte en arriere (RM-010 a RM-014)."""
 
@@ -163,7 +163,7 @@ def test_compte_bloque_ne_peut_pas_soumettre(app, client):
 
 
 def test_soumission_avec_promotion_publique(app, client):
-    """Prompt 19 : cocher promouvoir enregistre description, contact et
+    """Cocher promouvoir enregistre description, contact et
     optionnellement une affiche."""
     from io import BytesIO
 

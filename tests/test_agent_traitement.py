@@ -1,4 +1,4 @@
-"""Tests de la page de traitement d'une declaration par l'agent (Prompt 10) :
+"""Tests de la page de traitement d'une declaration par l'agent :
 ouverture qui passe 'nouvelle' en 'en_evaluation', historique de
 l'organisateur, fixation/modification du montant, mise en attente
 (RM-030 a RM-035)."""

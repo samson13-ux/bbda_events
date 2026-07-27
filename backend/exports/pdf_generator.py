@@ -1,10 +1,10 @@
-"""Generation du PDF de la quittance BBDA (Prompt 12, RM-050 a RM-054).
+"""Generation du PDF de la quittance BBDA (RM-050 a RM-054).
 
 Reproduit la structure du formulaire papier physique du BBDA (en-tete
 3 colonnes, corps avec champs a lignes de points, tableau des droits et
 mode de paiement, pied avec somme en lettres et signature de l'agent),
 a partir des donnees deja enregistrees en base par `generer_quittance()`
-(backend/exports/routes.py, Prompt 11).
+(backend/exports/routes.py).
 """
 
 import os

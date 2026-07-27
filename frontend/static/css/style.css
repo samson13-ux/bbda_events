@@ -1,7 +1,6 @@
 /* Feuille de style de base — palette institutionnelle BBDA (vert, sable, or).
-   Design complet de la face publique prevu au Prompt 18-19 du guide de dev ;
-   ce fichier couvre pour l'instant la navigation, les formulaires
-   d'authentification et les pages d'espace personnel. */
+   Couvre la navigation, les formulaires d'authentification, les pages
+   d'espace personnel et la face publique. */
 
 :root {
     --couleur-fond: #fdfcf8;
@@ -305,7 +304,7 @@ a:hover {
     color: var(--couleur-texte-att);
 }
 
-/* Page de traitement d'une declaration par l'agent (Prompt 10) */
+/* Page de traitement d'une declaration par l'agent */
 
 .mise-en-page-traitement {
     display: grid;
@@ -353,7 +352,7 @@ a:hover {
     }
 }
 
-/* Espace agent : mise en page avec sidebar (Prompt 9) */
+/* Espace agent : mise en page avec sidebar */
 
 .mise-en-page-agent {
     display: flex;
@@ -408,7 +407,7 @@ a:hover {
     min-width: 0;
 }
 
-/* Espace administrateur : mise en page avec sidebar sombre (Prompt 16) */
+/* Espace administrateur : mise en page avec sidebar sombre */
 
 .mise-en-page-admin {
     display: flex;
@@ -495,7 +494,7 @@ a:hover {
     max-width: 30rem;
 }
 
-/* Graphique en barres CSS, sans librairie externe (Prompt 16, 17) */
+/* Graphique en barres CSS, sans librairie externe */
 
 .graphique-barres {
     display: flex;
@@ -607,7 +606,7 @@ a:hover {
     }
 }
 
-/* Page de detail d'une declaration (Prompt 8) */
+/* Page de detail d'une declaration */
 
 .entete-detail {
     display: flex;
@@ -718,7 +717,7 @@ a:hover {
     }
 }
 
-/* Formulaire de nouvelle declaration (Prompt 7) */
+/* Formulaire de nouvelle declaration */
 
 .section-formulaire {
     margin: 2rem 0 1.25rem;
@@ -944,7 +943,7 @@ a:hover {
     }
 }
 
-/* Actions arrieres et surveillance (Prompt 15) */
+/* Actions arrieres et surveillance */
 
 .actions-arrieres {
     display: flex;
@@ -992,7 +991,7 @@ a:hover {
     gap: 0.75rem;
 }
 
-/* Page d'accueil publique (Prompt 5) */
+/* Page d'accueil publique */
 
 .section-heros {
     text-align: center;
@@ -1068,7 +1067,7 @@ a:hover {
     }
 }
 
-/* Tableaux de bord (placeholders Prompt 4, agent/admin remplaces aux Prompts 11-16) */
+/* Tableaux de bord */
 
 .carte-tableau-de-bord {
     background-color: var(--couleur-carte);
@@ -1077,7 +1076,7 @@ a:hover {
     padding: 2rem;
 }
 
-/* Tableau de bord organisateur (Prompt 6) */
+/* Tableau de bord organisateur */
 
 .banniere-blocage {
     background-color: #fbe7e3;
@@ -1283,7 +1282,7 @@ a.carte-stat:hover {
     }
 }
 
-/* ========== Face publique (Prompt 18) ========== */
+/* ========== Face publique ========== */
 
 .page-publique {
     font-family: "DM Sans", "Segoe UI", sans-serif;

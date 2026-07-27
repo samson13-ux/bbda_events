@@ -1,4 +1,4 @@
-"""Tests du tableau de bord organisateur (Prompt 6) : statistiques, blocage
+"""Tests du tableau de bord organisateur : statistiques, blocage
 de compte en arriere, controle de propriete sur le detail d'une declaration
 (RM-002, RM-004, RM-073)."""
 
@@ -121,7 +121,7 @@ def test_compte_actif_peut_ouvrir_le_formulaire(app, client):
 def test_organisateur_ne_peut_pas_voir_declaration_dautrui(app, client):
     """Controle de propriete : une declaration qui n'appartient pas a
     l'organisateur connecte renvoie 404 (et non 403, pour ne pas confirmer
-    son existence — cf. spec du Prompt 8)."""
+    son existence)."""
     autre_organisateur_id = creer_organisateur(app, "autre@example.com")
     declaration_id = creer_declaration(app, autre_organisateur_id, "nouvelle")
     creer_organisateur(app, "orga_test@example.com")

@@ -1,10 +1,8 @@
 """Routes d'administration.
 
-Route de connexion (Prompt 4) : tableau de bord minimal, pour valider le
-flux d'authentification. Espace administrateur complet implemente au Prompt 16 : statistiques
-globales, gestion des comptes utilisateurs (organisateurs et agents), et
-parametres systeme. Statistiques avancees (Prompt 17) : module
-`admin/stats.py` et page `/admin/statistiques`.
+Tableau de bord, statistiques globales, gestion des comptes utilisateurs
+(organisateurs et agents), parametres systeme. Statistiques avancees via
+`admin/stats.py` et la page `/admin/statistiques`.
 """
 
 from datetime import datetime
@@ -127,9 +125,9 @@ def tableau_de_bord():
 @admin_bp.route("/statistiques")
 @role_required("admin")
 def statistiques():
-    """Page de statistiques avancees (Prompt 17) : resume de l'annee,
-    graphiques CSS (declarations, redevances, repartition par type),
-    top organisateurs et synthese des arrieres."""
+    """Page de statistiques avancees : resume de l'annee, graphiques CSS
+    (declarations, redevances, repartition par type), top organisateurs
+    et synthese des arrieres."""
     annee = datetime.utcnow().year
     declarations = stats_admin.get_declarations_par_mois(annee)
     redevances = stats_admin.get_redevances_par_mois(annee)
@@ -240,7 +238,7 @@ def _parametre_ou_defaut(cle, defaut):
 def parametres():
     """Affiche et sauvegarde les parametres systeme configurables
     (RM du §9 de docs/REGLES_METIER.md) : SEUIL_ARRIERE et
-    DELAI_NOTIFICATION, utilises par le moteur d'arrieres du Prompt 14."""
+    DELAI_NOTIFICATION, utilises par le moteur d'arrieres."""
     if request.method == "POST":
         erreurs = []
         for cle, libelle in (("SEUIL_ARRIERE", "Le seuil d'arriéré"), ("DELAI_NOTIFICATION", "Le délai de notification")):

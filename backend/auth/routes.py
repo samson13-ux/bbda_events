@@ -1,5 +1,4 @@
-"""Routes d'authentification : inscription (organisateur), connexion,
-deconnexion. Implementation complete du Prompt 4 du guide de dev.
+"""Inscription, connexion et deconnexion.
 
 Regles metier appliquees ici : RM-001 a RM-005 (acces), RM-080/RM-081
 (alerte immediate a la reconnexion d'un compte sous surveillance).

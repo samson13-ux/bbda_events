@@ -1,4 +1,4 @@
-"""Donnees de demonstration pour la soutenance (Prompt 20).
+"""Donnees de demonstration pour la soutenance.
 
 Insere un jeu realiste (organisateurs burkinabe, declarations aux statuts
 varies, evenements publics, arrieres, surveillance) sans ecraser une base

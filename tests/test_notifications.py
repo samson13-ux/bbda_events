@@ -1,4 +1,4 @@
-"""Tests du module de notifications par email (Prompt 13) : envoi HTML reel
+"""Tests du module de notifications par email : envoi HTML reel
 via Flask-Mail (suppresse en environnement de test), journalisation en base
 avant envoi, mise a jour du statut apres tentative, et declenchement correct
 des 6 fonctions depuis les routes concernees (RM-014, RM-033, RM-054, RM-081)."""
@@ -91,7 +91,7 @@ def test_confirmation_declaration_est_envoyee_et_marquee(app, client):
 
 def test_declaration_bloquee_notifie_organisateur(app, client):
     """RM-010/RM-074 : tenter d'acceder au formulaire avec un compte bloque
-    declenche la notification 'declaration_bloquee' (FONCTION 6)."""
+    declenche la notification 'declaration_bloquee'."""
     creer_organisateur(app, "orga_bloque@example.com", statut_compte="bloque")
     connecter(client, "orga_bloque@example.com")
 
@@ -106,7 +106,7 @@ def test_declaration_bloquee_notifie_organisateur(app, client):
 
 def test_alerte_surveillance_notifie_les_agents(app, client):
     """RM-081 : la reconnexion d'un compte 'surveillance' notifie tous les
-    agents/administrateurs actifs (FONCTION 5)."""
+    agents/administrateurs actifs."""
     creer_agent(app, "agent1@example.com", role="agent")
     creer_agent(app, "admin1@example.com", role="admin")
     creer_organisateur(app, "orga_surveille@example.com", statut_compte="surveillance")
@@ -122,9 +122,8 @@ def test_alerte_surveillance_notifie_les_agents(app, client):
 
 
 def test_rappel_arriere_journalise_et_envoye(app):
-    """FONCTION 4 : notifier_rappel_arriere enregistre puis tente l'envoi
-    d'un rappel pour un arriere donne (pas encore declenchee automatiquement,
-    le moteur de gestion des arrieres est prevu au Prompt 14)."""
+    """notifier_rappel_arriere enregistre puis tente l'envoi d'un rappel
+    pour un arriere donne."""
     from backend.notifications.email_service import notifier_rappel_arriere
 
     organisateur_id = creer_organisateur(app, "orga_arriere@example.com")

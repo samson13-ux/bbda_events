@@ -1,5 +1,5 @@
-"""Tests de l'interface agent de gestion des arrieres et de la surveillance
-(Prompt 15) : debloquer/bloquer un compte, envoyer les rappels, marquer/lever
+"""Tests de l'interface agent de gestion des arrieres et de la surveillance :
+debloquer/bloquer un compte, envoyer les rappels, marquer/lever
 une surveillance, et affichage des listes (RM-060 a RM-084)."""
 
 from datetime import datetime, timedelta

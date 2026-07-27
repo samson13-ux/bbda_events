@@ -1,4 +1,4 @@
-"""Tests du moteur de gestion des arrieres (Prompt 14) : verification/creation
+"""Tests du moteur de gestion des arrieres : verification/creation
 d'arrieres, blocage automatique du compte au-dela du seuil, rappels
 automatiques, blocage/deblocage manuel, surveillance des comptes, et
 integration des arrieres dans la quittance (RM-060 a RM-084)."""
@@ -109,7 +109,7 @@ def connecter(client, email, mot_de_passe="password123"):
 
 
 def test_verifier_arriere_calcule_le_total_et_le_caractere_bloquant(app):
-    """FONCTION 1 : montant_total_du, nombre_arrieres, bloquant (seuil par
+    """montant_total_du, nombre_arrieres, bloquant (seuil par
     defaut 1000 FCFA en l'absence de parametre configure)."""
     organisateur_id = creer_organisateur(app)
     with app.app_context():
@@ -134,8 +134,8 @@ def test_verifier_arriere_sous_le_seuil_non_bloquant(app):
 
 
 def test_creer_arriere_fixe_echeance_a_j_plus_delai_et_bloque_le_compte(app):
-    """FONCTION 2 (RM-062, RM-063, RM-073) : echeance a J+7 par defaut, et
-    passage automatique du compte a 'arriere' si le seuil est franchi."""
+    """Echeance a J+7 par defaut, et passage automatique du compte a
+    'arriere' si le seuil est franchi (RM-062, RM-063, RM-073)."""
     organisateur_id = creer_organisateur(app)
     declaration_id = creer_declaration(app, organisateur_id)
 
@@ -159,8 +159,8 @@ def test_creer_arriere_sous_le_seuil_ne_bloque_pas(app):
 
 
 def test_verifier_et_envoyer_rappels_respecte_le_delai_entre_deux_relances(app):
-    """FONCTION 3 (RM-070 a RM-072) : un arriere en retard recoit un rappel,
-    mais pas deux fois dans le meme delai."""
+    """Un arriere en retard recoit un rappel, mais pas deux fois dans le
+    meme delai (RM-070 a RM-072)."""
     organisateur_id = creer_organisateur(app)
     with app.app_context():
         arriere_a_relancer = Arriere(
@@ -191,8 +191,8 @@ def test_verifier_et_envoyer_rappels_respecte_le_delai_entre_deux_relances(app):
 
 
 def test_marquer_bloquer_debloquer_compte(app):
-    """FONCTIONS 4, 5, 6 : transitions manuelles/automatiques de statut, et
-    soldes des arrieres au deblocage (RM-075, RM-076)."""
+    """Transitions manuelles/automatiques de statut, et soldes des arrieres
+    au deblocage (RM-075, RM-076)."""
     organisateur_id = creer_organisateur(app)
     with app.app_context():
         marquer_compte_arriere(organisateur_id)
@@ -215,8 +215,8 @@ def test_marquer_bloquer_debloquer_compte(app):
 
 
 def test_marquer_et_lever_surveillance(app):
-    """FONCTIONS 7, 8 (RM-080, RM-084) : mise sous surveillance et levee,
-    avec traitement des alertes en attente."""
+    """Mise sous surveillance et levee, avec traitement des alertes en
+    attente (RM-080, RM-084)."""
     organisateur_id = creer_organisateur(app)
     agent_id = creer_agent(app)
 
@@ -240,8 +240,8 @@ def test_marquer_et_lever_surveillance(app):
 
 
 def test_verifier_connexion_surveillance_notifie_les_agents(app):
-    """FONCTION 9 (RM-081) : une connexion sous surveillance cree une
-    alerte et notifie tous les agents/administrateurs actifs."""
+    """Une connexion sous surveillance cree une alerte et notifie tous les
+    agents/administrateurs actifs (RM-081)."""
     creer_agent(app, "agent2@bbda.bf", role="agent")
     creer_agent(app, "admin2@bbda.bf", role="admin")
     organisateur_id = creer_organisateur(app, statut_compte="surveillance")
@@ -263,8 +263,7 @@ def test_verifier_connexion_surveillance_compte_actif_ne_fait_rien(app):
 
 
 def test_connexion_organisateur_sous_surveillance_declenche_lalerte_via_la_route(app, client):
-    """Verifie le branchement reel dans auth/routes.py (integre par le
-    Prompt 14 conformement au guide de dev)."""
+    """Verifie le branchement reel dans auth/routes.py."""
     creer_agent(app, "agent3@bbda.bf", role="agent")
     creer_organisateur(app, email="surveille2@example.com", statut_compte="surveillance")
 
@@ -276,8 +275,8 @@ def test_connexion_organisateur_sous_surveillance_declenche_lalerte_via_la_route
 
 
 def test_integrer_arrieres_dans_quittance_additionne_les_arrieres_preexistants(app):
-    """FONCTION 10 (RM-050 a RM-054) : la quittance reporte les arrieres
-    preexistants dans droit_arriere/droit_exigible."""
+    """La quittance reporte les arrieres preexistants dans
+    droit_arriere/droit_exigible (RM-050 a RM-054)."""
     creer_agent(app, "agent_quittance@bbda.bf")
     organisateur_id = creer_organisateur(app)
     declaration_id = creer_declaration(app, organisateur_id)

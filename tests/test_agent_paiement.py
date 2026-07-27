@@ -1,4 +1,4 @@
-"""Tests de la confirmation de paiement par l'agent (Prompt 11) :
+"""Tests de la confirmation de paiement par l'agent :
 paiement integral, paiement partiel (creation automatique d'un arriere),
 generation de la quittance, validations, controle d'acces sur le statut
 (RM-040 a RM-054)."""
@@ -84,7 +84,7 @@ def connecter(client, email, mot_de_passe="password123"):
 
 def test_formulaire_paiement_affiche_le_montant_a_percevoir(app, client):
     """Le formulaire affiche le total tarif + redevance calcule par
-    l'agent au Prompt 10."""
+    l'agent lors du traitement."""
     creer_agent(app)
     declaration_id = creer_declaration_avec_montant(app)
     connecter(client, "agent@bbda.bf")
@@ -382,7 +382,7 @@ def test_organisateur_ne_peut_pas_confirmer_un_paiement(app, client):
 
 
 def test_paiement_evenement_promu_notifie_publication(app, client):
-    """Prompt 19 : apres quittance, un evenement marque 'promouvoir'
+    """Apres quittance, un evenement marque 'promouvoir'
     declenche une notification evenement_publie."""
     creer_agent(app)
     declaration_id = creer_declaration_avec_montant(app, promouvoir=True)

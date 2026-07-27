@@ -1,5 +1,5 @@
-"""Tests du blueprint d'authentification (Prompt 4) : inscription, connexion,
-deconnexion, controle d'acces par role (RM-001 a RM-005)."""
+"""Inscription, connexion et deconnexion.
+Controle d'acces par role (RM-001 a RM-005)."""
 
 import bcrypt
 import pytest

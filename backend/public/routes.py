@@ -1,4 +1,4 @@
-"""Routes de la face publique (Prompts 18 et 19).
+"""Routes de la face publique.
 
 Accueil marketing, listing des evenements promus (RM-090 a RM-093),
 page de detail, placeholder billetterie, support (FAQ), contact
