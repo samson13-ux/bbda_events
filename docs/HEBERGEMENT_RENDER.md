@@ -33,25 +33,28 @@ Dans le Web Service → **Environment** :
 | `DATABASE_URL` | URL Postgres Render | Oui |
 | `ADMIN_PASSWORD` | mot de passe admin fort **≥ 10 caracteres** | Oui pour creer/reset admin |
 | `PUBLIC_BASE_URL` | `https://bbda-events.onrender.com` | Oui pour liens emails |
-| `BREVO_API_KEY` | clé API Brevo | **Oui pour emails sur Render free** |
-| `MAIL_USERNAME` | email expéditeur vérifié chez Brevo | Oui (même adresse que l’expéditeur Brevo) |
+| `SENDGRID_API_KEY` | clé API SendGrid | **Oui (recommandé) pour emails sur Render free** |
+| `BREVO_API_KEY` | clé API Brevo | Alternative (parfois activation manuelle requise) |
+| `MAIL_USERNAME` | email expéditeur vérifié chez SendGrid/Brevo | Oui |
 
 ### Emails sur Render free (important)
 
 Depuis sept. 2025, Render **bloque le SMTP** (ports 25/465/587) sur le plan gratuit.
 Gmail SMTP ne fonctionne donc plus depuis Render.
 
-**Solution : Brevo (gratuit)** — envoi par HTTPS :
+**Solution recommandée : SendGrid (gratuit)** — envoi par HTTPS, souvent utilisable le jour même :
 
-1. Crée un compte sur https://app.brevo.com  
-2. **Senders** → ajoute / vérifie ton email (ex. ton Gmail)  
-3. **SMTP & API** → crée une clé API  
+1. Crée un compte sur https://signup.sendgrid.com  
+2. **Settings → Sender Authentication → Single Sender Verification**  
+   → ajoute ton Gmail → clique le lien de confirmation reçu  
+3. **Settings → API Keys → Create API Key** (Full Access ou Mail Send) → copie `SG....`  
 4. Dans Render → Environment :
-   - `BREVO_API_KEY` = la clé (`xkeysib-...`)  
-   - `MAIL_USERNAME` = l’email vérifié chez Brevo  
-5. Save and deploy  
+   - `SENDGRID_API_KEY` = la clé  
+   - `MAIL_USERNAME` = l’email vérifié Single Sender  
+5. Si tu as encore `BREVO_API_KEY`, tu peux le laisser : **SendGrid est prioritaire**.  
+6. Save and deploy  
 
-Tu peux laisser `MAIL_PASSWORD` vide sur Render si `BREVO_API_KEY` est défini.
+**Alternative Brevo** : `BREVO_API_KEY` + sender vérifié. Certains comptes attendent une activation manuelle Brevo avant d’envoyer.
 
 ### Astuce DATABASE_URL
 
@@ -96,7 +99,7 @@ Cela cree les tables + l'admin **uniquement si la base est vide**.
 - [ ] `PUBLIC_BASE_URL` pointe vers l'URL Render HTTPS
 - [ ] `ADMIN_PASSWORD` fort defini
 - [ ] Mot de passe admin demarre (`password123`) **remplace** via reset one-shot ou ecran Paramètres
-- [ ] `BREVO_API_KEY` + `MAIL_USERNAME` (email vérifié Brevo) pour les notifications
+- [ ] `SENDGRID_API_KEY` + `MAIL_USERNAME` (email Single Sender vérifié) pour les notifications
 - [ ] Connexion admin OK
 
 - [ ] Connexion organisateur de test OK

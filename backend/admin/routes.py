@@ -277,8 +277,18 @@ def parametres():
         seuil_arriere=_parametre_ou_defaut("SEUIL_ARRIERE", SEUIL_ARRIERE_DEFAUT),
         delai_notification=_parametre_ou_defaut("DELAI_NOTIFICATION", DELAI_NOTIFICATION_DEFAUT),
         email_brevo_configure=bool((current_app.config.get("BREVO_API_KEY") or "").strip()),
+        email_sendgrid_configure=bool((current_app.config.get("SENDGRID_API_KEY") or "").strip()),
         email_expediteur=(
             current_app.config.get("MAIL_DEFAULT_SENDER") or current_app.config.get("MAIL_USERNAME") or ""
+        ),
+        email_canal=(
+            "sendgrid"
+            if (current_app.config.get("SENDGRID_API_KEY") or "").strip()
+            else (
+                "brevo"
+                if (current_app.config.get("BREVO_API_KEY") or "").strip()
+                else "smtp/aucun"
+            )
         ),
     )
 

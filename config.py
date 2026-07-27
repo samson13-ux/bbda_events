@@ -36,7 +36,8 @@ class Config:
     MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
     MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
     MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER") or os.environ.get("MAIL_USERNAME")
-    # API HTTPS Brevo (recommandee sur Render free : SMTP y est bloque).
+    # API HTTPS (Render free bloque le SMTP). SendGrid prioritaire si present.
+    SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
     BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
 
     MAX_CONTENT_LENGTH = 2 * 1024 * 1024  # 2 Mo, cf. RM-023

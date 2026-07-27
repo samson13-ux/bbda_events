@@ -63,4 +63,4 @@ def test_parametres_affiche_statut_brevo(app, client):
     _connecter_admin(client)
     page = client.get("/admin/parametres").get_data(as_text=True)
     assert "Test email" in page
-    assert "configuré" in page
+    assert "Canal actif" in page
