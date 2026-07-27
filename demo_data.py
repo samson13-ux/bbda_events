@@ -201,8 +201,9 @@ def seed_soutenance(app):
     db.session.add(
         AlerteSurveillance(
             organisateur_id=orga3.id,
-            motif="Reconnexions repetees apres rappels d'arriere (jeu de demo)",
-            statut="en_attente",
+            marque_par=agent1.id,
+            commentaire="Reconnexions repetees apres rappels d'arriere (jeu de demo)",
+            traitee=False,
         )
     )
     db.session.add(
