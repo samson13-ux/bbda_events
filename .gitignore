@@ -5,9 +5,6 @@ __pycache__/
 *.pyo
 .pytest_cache/
 
-# Binaire ngrok local (telecharge pour le lien stable)
-tools/ngrok/
-
 # Secrets
 .env
 .public_url
@@ -42,9 +39,9 @@ tmp_*.html
 
 # Gros fichiers locaux non necessaires au deploiement
 *.pptx
-guide/_tmp.zip
-guide/_tmp_extract/
-guide/_extracted.txt
+memoire/guide/_tmp.zip
+memoire/guide/_tmp_extract/
+memoire/guide/_extracted.txt
 
 # Base de donnees locale (si SQLite utilise en dev)
 *.sqlite3
