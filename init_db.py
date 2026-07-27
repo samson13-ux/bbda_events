@@ -520,6 +520,30 @@ def main():
             return
 
         if bootstrap:
+            # One-shot Render : vider toute la base et garder seulement admin + parametres.
+            if os.environ.get("FORCE_BASE_VIDE") == "1":
+                print(
+                    "FORCE_BASE_VIDE=1 : suppression de toutes les donnees, "
+                    "puis base neuve (admin + parametres seulement)..."
+                )
+                db.drop_all()
+                _nettoyer_fichiers_generes(app)
+                db.create_all()
+                try:
+                    seed_base_vide()
+                except ValueError as erreur:
+                    raise SystemExit(str(erreur)) from erreur
+                print(
+                    "FORCE_BASE_VIDE appliqué. "
+                    "IMPORTANT : retire FORCE_BASE_VIDE de Render après ce déploiement."
+                )
+                try:
+                    db.session.remove()
+                    db.engine.dispose()
+                except Exception:
+                    pass
+                return
+
             db.create_all()
             if Utilisateur.query.first() is None:
                 print("Bootstrap : base vide, creation admin uniquement...")

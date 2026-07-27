@@ -69,14 +69,18 @@ python init_db.py --bootstrap
 
 Cela cree les tables + l'admin **uniquement si la base est vide**.
 
-### Changer le mot de passe admin existant (sans Shell)
+### Nettoyer les donnees de test (base neuve, sans Shell)
 
-1. Ajoute / mets a jour `ADMIN_PASSWORD` (fort, ≥ 10 caracteres)
-2. Ajoute temporairement `FORCE_ADMIN_PASSWORD_RESET=1`
+Pour repartir propre avant les tests utilisateurs :
+
+1. Verifie que `ADMIN_PASSWORD` est defini (≥ 10 caracteres)
+2. Ajoute temporairement `FORCE_BASE_VIDE=1`
 3. **Manual Deploy** → attendre le succes
-4. **Supprime** `FORCE_ADMIN_PASSWORD_RESET` (important)
-5. Connecte-toi avec `admin@bbda.bf` + le nouveau mot de passe
-6. Optionnel : **Paramètres → Changer mon mot de passe**
+4. **Supprime** `FORCE_BASE_VIDE` (important, sinon la base est videe a chaque demarrage)
+5. Connecte-toi : `admin@bbda.bf` + `ADMIN_PASSWORD`
+6. Recree agents / organisateurs de test au besoin
+
+Cela efface declarations, orga, agents, notifications, etc. et garde uniquement admin + parametres systeme.
 
 ## Partie 2 — durcissement (deja dans le code)
 
