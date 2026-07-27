@@ -272,13 +272,14 @@ def parametres():
         flash("Paramètres enregistrés.", "succes")
         return redirect(url_for("admin.parametres"))
 
+    cle = (current_app.config.get("SENDGRID_API_KEY") or "").strip()
     return render_template(
         "admin/parametres.html",
         seuil_arriere=_parametre_ou_defaut("SEUIL_ARRIERE", SEUIL_ARRIERE_DEFAUT),
         delai_notification=_parametre_ou_defaut("DELAI_NOTIFICATION", DELAI_NOTIFICATION_DEFAUT),
         email_canal=(
             "sendgrid"
-            if (current_app.config.get("SENDGRID_API_KEY") or "").strip()
+            if cle
             else (
                 "smtp"
                 if current_app.config.get("MAIL_USERNAME") and current_app.config.get("MAIL_PASSWORD")
@@ -288,6 +289,8 @@ def parametres():
         email_expediteur=(
             current_app.config.get("MAIL_DEFAULT_SENDER") or current_app.config.get("MAIL_USERNAME") or ""
         ),
+        email_sendgrid_present=bool(cle),
+        email_sendgrid_longueur=len(cle),
     )
 
 

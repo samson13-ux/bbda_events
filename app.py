@@ -41,9 +41,20 @@ def create_app(env=None):
     csrf.init_app(app)
     limiter.init_app(app)
 
-    has_sendgrid = bool((app.config.get("SENDGRID_API_KEY") or "").strip())
+    # Relecture runtime : la cle Render doit etre visible ici apres redeploy.
+    cle_sendgrid = (os.environ.get("SENDGRID_API_KEY") or app.config.get("SENDGRID_API_KEY") or "").strip()
+    app.config["SENDGRID_API_KEY"] = cle_sendgrid or None
+    if not app.config.get("MAIL_DEFAULT_SENDER"):
+        app.config["MAIL_DEFAULT_SENDER"] = app.config.get("MAIL_USERNAME")
+
+    has_sendgrid = bool(cle_sendgrid)
     has_smtp = bool(app.config.get("MAIL_USERNAME") and app.config.get("MAIL_PASSWORD"))
-    if env == "production" and not app.config.get("TESTING") and not has_sendgrid and not has_smtp:
+    if has_sendgrid:
+        app.logger.info(
+            "Canal email : SendGrid (cle presente, %s caracteres).",
+            len(cle_sendgrid),
+        )
+    elif env == "production" and not app.config.get("TESTING") and not has_smtp:
         app.logger.warning(
             "Aucun canal email : definis SENDGRID_API_KEY + MAIL_USERNAME (Render) "
             "ou MAIL_USERNAME + MAIL_PASSWORD (SMTP local)."
@@ -51,7 +62,8 @@ def create_app(env=None):
     elif env == "production" and os.environ.get("RENDER") and not has_sendgrid:
         app.logger.warning(
             "SENDGRID_API_KEY absent sur Render : le SMTP Gmail est bloque. "
-            "Ajoute SENDGRID_API_KEY et MAIL_USERNAME (= Single Sender verifie)."
+            "Ajoute SENDGRID_API_KEY (Environment du Web Service) puis Manual Deploy. "
+            "Nom exact de la cle : SENDGRID_API_KEY"
         )
 
     import models  # noqa: F401 — enregistre les modeles et le user_loader

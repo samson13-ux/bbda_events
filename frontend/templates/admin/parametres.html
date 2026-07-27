@@ -29,7 +29,15 @@
         — Expéditeur : <strong>{{ email_expediteur or "(vide)" }}</strong>
     </p>
     <p class="sous-titre-section">
-        Local = SMTP Gmail. Render = SendGrid API (`SENDGRID_API_KEY` + `MAIL_USERNAME` = Single Sender vérifié).
+        SENDGRID_API_KEY :
+        {% if email_sendgrid_present %}
+        <strong>détectée</strong> ({{ email_sendgrid_longueur }} caractères)
+        {% else %}
+        <strong>absente</strong> — à ajouter dans Render → Environment, puis redeploy
+        {% endif %}
+    </p>
+    <p class="sous-titre-section">
+        Local = SMTP Gmail. Render = SendGrid (`SENDGRID_API_KEY` + `MAIL_USERNAME` = Single Sender).
     </p>
     <form method="post" action="{{ url_for('admin.tester_email') }}">
         {% include '_csrf.html' %}
