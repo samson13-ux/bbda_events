@@ -71,16 +71,18 @@ Cela cree les tables + l'admin **uniquement si la base est vide**.
 
 ### Nettoyer les donnees de test (base neuve, sans Shell)
 
-Pour repartir propre avant les tests utilisateurs :
+**Important :** ne retire PAS la variable pendant le deploy. Attends **Live** + le log de succes.
 
-1. Verifie que `ADMIN_PASSWORD` est defini (≥ 10 caracteres)
-2. Ajoute temporairement `FORCE_BASE_VIDE=1`
-3. **Manual Deploy** → attendre le succes
-4. **Supprime** `FORCE_BASE_VIDE` (important, sinon la base est videe a chaque demarrage)
-5. Connecte-toi : `admin@bbda.bf` + `ADMIN_PASSWORD`
-6. Recree agents / organisateurs de test au besoin
+1. Attends que le dernier commit soit deploye
+2. Environment → ajoute :
+   - `ADMIN_PASSWORD` (≥ 10 caracteres)
+   - `RESET_BASE_JETON` = `nettoyer-lundi-1` (n'importe quel texte unique)
+3. **Manual Deploy** → attends **Live**
+4. Logs : cherche `RESET_BASE_JETON=... appliqué avec succès`
+5. Ensuite seulement : **supprime** `RESET_BASE_JETON`
+6. Connexion : `admin@bbda.bf` → affiche **SAMSON BBDA**
 
-Cela efface declarations, orga, agents, notifications, etc. et garde uniquement admin + parametres systeme.
+Pour un 2e nettoyage plus tard : change le jeton (`nettoyer-lundi-2`) puis redeploy.
 
 ## Partie 2 — durcissement (deja dans le code)
 

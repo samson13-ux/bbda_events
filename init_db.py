@@ -572,13 +572,57 @@ def main():
             return
 
         if bootstrap:
-            # One-shot Render : vider les donnees de test, garder admin SAMSON + parametres.
+            db.create_all()
+
+            # One-shot Render : jeton unique. Exemple RESET_BASE_JETON=nettoyer-2026-07-27
+            # Une fois applique, change le jeton pour un nouveau nettoyage.
+            # Tu peux retirer la variable APRES le deploy Live (pas pendant).
+            jeton_reset = (os.environ.get("RESET_BASE_JETON") or "").strip()
+            if jeton_reset:
+                deja = ParametresSysteme.query.filter_by(cle="RESET_BASE_JETON_APPLIQUE").first()
+                if deja is not None and deja.valeur == jeton_reset:
+                    print(
+                        f"RESET_BASE_JETON={jeton_reset} deja applique : nettoyage ignore. "
+                        "Change la valeur du jeton pour nettoyer a nouveau."
+                    )
+                else:
+                    print(
+                        f"RESET_BASE_JETON={jeton_reset} : nettoyage des donnees metier "
+                        "(admin SAMSON BBDA conserve)..."
+                    )
+                    try:
+                        nettoyer_donnees_metier_garder_admin()
+                        _nettoyer_fichiers_generes(app)
+                        if deja is None:
+                            db.session.add(
+                                ParametresSysteme(
+                                    cle="RESET_BASE_JETON_APPLIQUE",
+                                    valeur=jeton_reset,
+                                    description="Dernier jeton de nettoyage base applique sur Render.",
+                                )
+                            )
+                        else:
+                            deja.valeur = jeton_reset
+                        db.session.commit()
+                        print(
+                            "RESET_BASE_JETON appliqué avec succès. "
+                            "Tu peux maintenant retirer RESET_BASE_JETON de Render."
+                        )
+                    except ValueError as erreur:
+                        raise SystemExit(str(erreur)) from erreur
+                    try:
+                        db.session.remove()
+                        db.engine.dispose()
+                    except Exception:
+                        pass
+                    return
+
+            # Ancien flag (toujours accepte) : FORCE_BASE_VIDE=1
             if _flag_env_actif("FORCE_BASE_VIDE"):
                 print(
                     "FORCE_BASE_VIDE actif : nettoyage des donnees metier "
                     "(admin SAMSON BBDA conserve)..."
                 )
-                db.create_all()
                 try:
                     nettoyer_donnees_metier_garder_admin()
                     _nettoyer_fichiers_generes(app)
@@ -595,7 +639,6 @@ def main():
                     pass
                 return
 
-            db.create_all()
             if Utilisateur.query.first() is None:
                 print("Bootstrap : base vide, creation admin uniquement...")
                 try:
@@ -604,12 +647,10 @@ def main():
                     raise SystemExit(str(erreur)) from erreur
             else:
                 print("Bootstrap : base deja initialisee.")
-                # Toujours aligner le nom admin sur SAMSON BBDA.
                 try:
                     mettre_a_jour_identite_admin()
                 except ValueError as erreur:
                     print(f"Identité admin non mise à jour : {erreur}")
-            # Option one-shot Render (sans Shell) : forcer le nouveau MDP admin.
             if _flag_env_actif("FORCE_ADMIN_PASSWORD_RESET"):
                 try:
                     mettre_a_jour_mot_de_passe_admin()
