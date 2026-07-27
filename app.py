@@ -82,7 +82,8 @@ def create_app(env=None):
 def _bootstrap_schema_si_besoin(app):
     """Sur Render (sans Shell), cree les tables + admin si la base est vide.
 
-    Ne fait rien si des utilisateurs existent deja. Ignore en mode testing.
+    Si la base existe deja : aligne le nom affiche de admin@bbda.bf sur
+    SAMSON BBDA (sans toucher aux autres donnees). Ignore en mode testing.
     """
     if app.config.get("TESTING"):
         return
@@ -100,6 +101,11 @@ def _bootstrap_schema_si_besoin(app):
 
                 app.logger.info("Bootstrap : base vide, creation admin...")
                 seed_base_vide()
+            else:
+                from init_db import mettre_a_jour_identite_admin
+
+                mettre_a_jour_identite_admin()
+                app.logger.info("Identite admin alignee : SAMSON BBDA")
         except ValueError as erreur:
             db.session.rollback()
             app.logger.error("Bootstrap admin refuse : %s", erreur)
