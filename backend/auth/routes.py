@@ -242,7 +242,7 @@ def connexion():
         )
         return render_template("auth/connexion.html"), 403
 
-    login_user(utilisateur, remember=bool(request.form.get("remember")))
+    login_user(utilisateur, remember=True)
 
     if utilisateur.role == "organisateur":
         _signaler_reconnexion_surveillance(utilisateur)

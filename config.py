@@ -2,6 +2,7 @@
 
 import os
 import tempfile
+from datetime import timedelta
 
 from dotenv import load_dotenv
 
@@ -36,6 +37,10 @@ class Config:
     MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
     MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
     MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER") or os.environ.get("MAIL_USERNAME")
+
+    # Session durable jusqu'a deconnexion explicite (cookie "remember"
+    # Flask-Login, 30 jours). Pas de case a cocher sur le formulaire.
+    REMEMBER_COOKIE_DURATION = timedelta(days=30)
 
     MAX_CONTENT_LENGTH = 2 * 1024 * 1024  # 2 Mo, cf. RM-023
     UPLOAD_FOLDER = os.path.join("frontend", "static", "uploads")
