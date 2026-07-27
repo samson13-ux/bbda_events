@@ -23,12 +23,14 @@
 </div>
 
 <div class="section-agent">
-    <h2>Test email (SMTP Gmail)</h2>
+    <h2>Test email</h2>
     <p class="sous-titre-section">
-        SMTP : {% if email_smtp_configure %}<strong>configuré</strong>{% else %}<strong>non configuré</strong>{% endif %}
+        Canal actif : <strong>{{ email_canal }}</strong>
         — Expéditeur : <strong>{{ email_expediteur or "(vide)" }}</strong>
     </p>
-    <p class="sous-titre-section">Fonctionne en local. Sur Render free, le SMTP est bloqué (solution HTTPS à brancher plus tard).</p>
+    <p class="sous-titre-section">
+        Local = SMTP Gmail. Render = SendGrid API (`SENDGRID_API_KEY` + `MAIL_USERNAME` = Single Sender vérifié).
+    </p>
     <form method="post" action="{{ url_for('admin.tester_email') }}">
         {% include '_csrf.html' %}
         <div class="champ-formulaire">

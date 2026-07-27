@@ -37,6 +37,8 @@ class Config:
     MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
     MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
     MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER") or os.environ.get("MAIL_USERNAME")
+    # API HTTPS SendGrid (Render free). Prioritaire sur SMTP si present.
+    SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
 
     # Session durable jusqu'a deconnexion explicite (cookie "remember"
     # Flask-Login, 30 jours). Pas de case a cocher sur le formulaire.

@@ -33,14 +33,20 @@ Dans le Web Service → **Environment** :
 | `DATABASE_URL` | URL Postgres Render | Oui |
 | `ADMIN_PASSWORD` | mot de passe admin fort **≥ 10 caracteres** | Oui pour creer/reset admin |
 | `PUBLIC_BASE_URL` | `https://bbda-events.onrender.com` | Oui pour liens emails |
-| `MAIL_USERNAME` | email Gmail | Oui (boite contact / From) |
-| `MAIL_PASSWORD` | mot de passe d'application Gmail | Pour **local** ; bloque sur Render free |
+| `SENDGRID_API_KEY` | clé API SendGrid (`SG....`) | **Oui pour emails sur Render free** |
+| `MAIL_USERNAME` | email **Single Sender vérifié** SendGrid | Oui (même adresse) |
 
-### Emails (etat actuel)
+### Emails
 
-- **En local** : SMTP Gmail (`MAIL_USERNAME` + `MAIL_PASSWORD`) — **intact**, comme avant.
-- **Sur Render free** : les ports SMTP (25/465/587) sont **bloques**. Les envois depuis Render echouent tant qu'une solution HTTPS n'est pas branchee.
-- Le code n'utilise plus Brevo / SendGrid (nettoye). Tu peux supprimer `BREVO_API_KEY` / `SENDGRID_API_KEY` sur Render.
+- **Local** : SMTP Gmail (`MAIL_USERNAME` + `MAIL_PASSWORD`) — intact.
+- **Render free** : `SENDGRID_API_KEY` + `MAIL_USERNAME` (= Single Sender vérifié, **sans domaine**).
+- Si `SENDGRID_API_KEY` est présent, SendGrid est utilisé ; sinon SMTP.
+
+**Setup SendGrid rapide :**
+1. Single Sender vérifié (déjà fait)
+2. Settings → API Keys → Create API Key (permission **Mail Send**)
+3. Render Environment : `SENDGRID_API_KEY` + `MAIL_USERNAME`
+4. Admin → Paramètres → Envoyer le test
 
 ### Astuce DATABASE_URL
 

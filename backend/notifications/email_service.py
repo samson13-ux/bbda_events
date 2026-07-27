@@ -2,20 +2,20 @@
 
 Flux :
 1. Journalisation en base (`notification`, statut `en_attente`) — RM-100
-2. Envoi SMTP via Flask-Mail (Gmail) — le meme chemin qu'en local
+2. Envoi :
+   - SendGrid API HTTPS si `SENDGRID_API_KEY` (Render free)
+   - sinon SMTP Gmail si `MAIL_USERNAME` + `MAIL_PASSWORD` (local)
 3. Mise a jour du statut `envoyee` ou `echouee` — RM-101, RM-102
 
-Configuration (`.env` / Render) :
-- `MAIL_USERNAME` + `MAIL_PASSWORD` : SMTP Gmail (fonctionne en local)
-- `MAIL_DEFAULT_SENDER` : optionnel (sinon = MAIL_USERNAME)
-- `PUBLIC_BASE_URL` : liens absolus dans les emails (URL Render / tunnel)
-
-Note Render free : les ports SMTP sont bloques. L'envoi depuis Render
-echouera tant qu'une solution HTTPS n'est pas branchee. En local, rien
-n'a change : Gmail SMTP reste le canal unique et intact.
+Configuration :
+- Local : MAIL_USERNAME + MAIL_PASSWORD (SMTP Gmail)
+- Render : SENDGRID_API_KEY + MAIL_USERNAME (= email Single Sender verifie)
 """
 
+import json
 import socket
+import urllib.error
+import urllib.request
 
 from flask import current_app, url_for
 from flask_mail import Message
@@ -23,8 +23,8 @@ from flask_mail import Message
 from extensions import db, mail
 from models import Notification, Utilisateur
 
-# Evite de bloquer le worker Flask trop longtemps si SMTP est injoignable.
 SMTP_TIMEOUT_SECONDES = 15
+SENDGRID_API_URL = "https://api.sendgrid.com/v3/mail/send"
 
 COULEUR_BBDA = "#1F4E79"
 ADRESSE_BBDA = "01 BP 3926 Ouagadougou 01 : Tél. 25 32 47 50"
@@ -85,13 +85,61 @@ def _expediteur():
     return current_app.config.get("MAIL_DEFAULT_SENDER") or current_app.config.get("MAIL_USERNAME")
 
 
+def _sendgrid_configure():
+    return bool((current_app.config.get("SENDGRID_API_KEY") or "").strip())
+
+
 def _smtp_configure():
-    """True si les identifiants Gmail SMTP sont presents."""
     return bool(current_app.config.get("MAIL_USERNAME") and current_app.config.get("MAIL_PASSWORD"))
 
 
+def _canal_actif():
+    """'sendgrid', 'smtp' ou None."""
+    if _sendgrid_configure():
+        return "sendgrid"
+    if _smtp_configure():
+        return "smtp"
+    return None
+
+
+def _envoyer_via_sendgrid(notification, destinataire_email, corps_html, reply_to=None):
+    """Envoi via API HTTPS SendGrid (Render free)."""
+    expediteur = _expediteur()
+    if not expediteur:
+        raise RuntimeError(
+            "MAIL_USERNAME manquant : mets l'email Single Sender vérifié chez SendGrid."
+        )
+
+    payload = {
+        "personalizations": [{"to": [{"email": destinataire_email}]}],
+        "from": {"email": expediteur, "name": "BBDA Events"},
+        "subject": notification.sujet,
+        "content": [{"type": "text/html", "value": corps_html}],
+    }
+    if reply_to:
+        payload["reply_to"] = {"email": reply_to}
+
+    requete = urllib.request.Request(
+        SENDGRID_API_URL,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {current_app.config['SENDGRID_API_KEY'].strip()}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(requete, timeout=15) as reponse:
+            if reponse.status not in (200, 201, 202):
+                corps = reponse.read().decode("utf-8", errors="replace")
+                raise RuntimeError(f"SendGrid HTTP {reponse.status}: {corps}")
+    except urllib.error.HTTPError as erreur_http:
+        detail = erreur_http.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"SendGrid HTTP {erreur_http.code}: {detail}") from erreur_http
+
+
 def _envoyer_via_smtp(notification, destinataire_email, corps_html, reply_to=None):
-    """Envoi SMTP Gmail via Flask-Mail (chemin historique, inchange)."""
+    """Envoi SMTP Gmail via Flask-Mail (chemin local, inchange)."""
     if not _smtp_configure():
         raise RuntimeError(
             "SMTP non configure : definis MAIL_USERNAME et MAIL_PASSWORD "
@@ -113,14 +161,29 @@ def _envoyer_via_smtp(notification, destinataire_email, corps_html, reply_to=Non
         socket.setdefaulttimeout(timeout_avant)
 
 
+def _dispatch_envoi(notification, destinataire_email, corps_html, reply_to=None):
+    """Choisit SendGrid (prioritaire) ou SMTP."""
+    canal = _canal_actif()
+    if canal == "sendgrid":
+        _envoyer_via_sendgrid(notification, destinataire_email, corps_html, reply_to=reply_to)
+    elif canal == "smtp":
+        _envoyer_via_smtp(notification, destinataire_email, corps_html, reply_to=reply_to)
+    else:
+        raise RuntimeError(
+            "Aucun canal email : definis SENDGRID_API_KEY + MAIL_USERNAME (Render) "
+            "ou MAIL_USERNAME + MAIL_PASSWORD (SMTP local)."
+        )
+    return canal
+
+
 def _envoyer(notification, destinataire_email, corps_html, reply_to=None):
-    """Envoie l'email SMTP puis met a jour le statut (RM-101, RM-102)."""
+    """Envoie l'email puis met a jour le statut (RM-101, RM-102)."""
     if current_app.config.get("MAIL_SUPPRESS_SEND"):
         notification.statut = "envoyee"
         return notification
 
     try:
-        _envoyer_via_smtp(notification, destinataire_email, corps_html, reply_to=reply_to)
+        _dispatch_envoi(notification, destinataire_email, corps_html, reply_to=reply_to)
         notification.statut = "envoyee"
     except Exception as erreur:  # noqa: BLE001
         notification.statut = "echouee"
@@ -134,12 +197,20 @@ def _envoyer(notification, destinataire_email, corps_html, reply_to=None):
 
 
 def tester_envoi_email(destinataire_email):
-    """Envoi de test admin (SMTP). Retourne (ok, message)."""
+    """Envoi de test admin. Retourne (ok, message)."""
     destinataire_email = (destinataire_email or "").strip().lower()
     if not destinataire_email or "@" not in destinataire_email:
         return False, "Indique un email destinataire valide."
-    if not _smtp_configure():
-        return False, "SMTP non configure : MAIL_USERNAME et MAIL_PASSWORD manquants."
+
+    canal = _canal_actif()
+    if not canal:
+        return (
+            False,
+            "Aucun canal : SENDGRID_API_KEY + MAIL_USERNAME (Render) "
+            "ou MAIL_USERNAME + MAIL_PASSWORD (local).",
+        )
+    if canal == "sendgrid" and not _expediteur():
+        return False, "SENDGRID_API_KEY présent, mais MAIL_USERNAME (Single Sender) manque."
 
     class _NotifTest:
         sujet = "BBDA Events : Test d'envoi email"
@@ -149,18 +220,18 @@ def tester_envoi_email(destinataire_email):
         paragraphes = [
             "Ceci est un email de test depuis l'espace admin BBDA Events.",
             f"Expéditeur : {_expediteur()}",
-            "Canal : SMTP Gmail",
-            "Si tu reçois ce message, l'envoi local / SMTP fonctionne.",
+            f"Canal : {canal}",
+            "Si tu reçois ce message, les notifications email fonctionnent.",
         ]
-        _envoyer_via_smtp(
+        _dispatch_envoi(
             notification,
             destinataire_email,
             _gabarit_html(notification.sujet, paragraphes),
         )
-        return True, f"Email de test accepté (SMTP). Vérifie {destinataire_email} (et les spams)."
+        return True, f"Email de test accepté ({canal}). Vérifie {destinataire_email} (et les spams)."
     except Exception as erreur:  # noqa: BLE001
         current_app.logger.exception("Echec test email admin")
-        return False, f"Échec d'envoi SMTP : {erreur}"
+        return False, f"Échec d'envoi : {erreur}"
 
 
 def _boite_dediee_et_admin():
