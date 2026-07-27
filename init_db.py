@@ -84,6 +84,58 @@ def mettre_a_jour_mot_de_passe_admin():
     print(f"Mot de passe mis à jour pour {EMAIL_ADMIN_BOOTSTRAP}.")
 
 
+def mettre_a_jour_identite_admin():
+    """Force le nom affiche de l'admin bootstrap : SAMSON BBDA."""
+    admin = Utilisateur.query.filter_by(email=EMAIL_ADMIN_BOOTSTRAP, role="admin").first()
+    if admin is None:
+        raise ValueError(f"Aucun admin trouvé pour {EMAIL_ADMIN_BOOTSTRAP}.")
+    admin.prenom = "SAMSON"
+    admin.nom = "BBDA"
+    admin.statut = "actif"
+    db.session.commit()
+    print(f"Identité admin mise à jour : SAMSON BBDA ({EMAIL_ADMIN_BOOTSTRAP}).")
+
+
+def _flag_env_actif(nom):
+    """True pour 1 / true / yes / on (insensible a la casse)."""
+    return (os.environ.get(nom) or "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def nettoyer_donnees_metier_garder_admin():
+    """Supprime toutes les donnees de test, garde admin@bbda.bf + parametres.
+
+    Plus fiable que drop_all() sur Postgres Render (enums / contraintes).
+    """
+    # Ordre respectant les cles etrangeres.
+    Notification.query.delete()
+    AlerteSurveillance.query.delete()
+    MessageContact.query.delete()
+    Quittance.query.delete()
+    Paiement.query.delete()
+    EvaluationAgent.query.delete()
+    ListeArtiste.query.delete()
+    Declaration.query.delete()
+    Arriere.query.delete()
+    Organisateur.query.delete()
+    Utilisateur.query.filter(Utilisateur.email != EMAIL_ADMIN_BOOTSTRAP).delete()
+
+    admin = Utilisateur.query.filter_by(email=EMAIL_ADMIN_BOOTSTRAP).first()
+    if admin is None:
+        db.session.commit()
+        seed_base_vide()
+        return
+
+    admin.prenom = "SAMSON"
+    admin.nom = "BBDA"
+    admin.role = "admin"
+    admin.statut = "actif"
+    if ParametresSysteme.query.count() == 0:
+        creer_parametres_systeme()
+    db.session.commit()
+    print("Données métier effacées. Admin conservé : SAMSON BBDA.")
+    print("  - Aucun agent, organisateur, déclaration ni événement")
+
+
 def creer_parametres_systeme():
     """Seed les parametres configurables par l'admin (REGLES_METIER.md §9)."""
     db.session.add_all(
@@ -520,17 +572,16 @@ def main():
             return
 
         if bootstrap:
-            # One-shot Render : vider toute la base et garder seulement admin + parametres.
-            if os.environ.get("FORCE_BASE_VIDE") == "1":
+            # One-shot Render : vider les donnees de test, garder admin SAMSON + parametres.
+            if _flag_env_actif("FORCE_BASE_VIDE"):
                 print(
-                    "FORCE_BASE_VIDE=1 : suppression de toutes les donnees, "
-                    "puis base neuve (admin + parametres seulement)..."
+                    "FORCE_BASE_VIDE actif : nettoyage des donnees metier "
+                    "(admin SAMSON BBDA conserve)..."
                 )
-                db.drop_all()
-                _nettoyer_fichiers_generes(app)
                 db.create_all()
                 try:
-                    seed_base_vide()
+                    nettoyer_donnees_metier_garder_admin()
+                    _nettoyer_fichiers_generes(app)
                 except ValueError as erreur:
                     raise SystemExit(str(erreur)) from erreur
                 print(
@@ -552,9 +603,14 @@ def main():
                 except ValueError as erreur:
                     raise SystemExit(str(erreur)) from erreur
             else:
-                print("Bootstrap : base deja initialisee, rien a faire.")
+                print("Bootstrap : base deja initialisee.")
+                # Toujours aligner le nom admin sur SAMSON BBDA.
+                try:
+                    mettre_a_jour_identite_admin()
+                except ValueError as erreur:
+                    print(f"Identité admin non mise à jour : {erreur}")
             # Option one-shot Render (sans Shell) : forcer le nouveau MDP admin.
-            if os.environ.get("FORCE_ADMIN_PASSWORD_RESET") == "1":
+            if _flag_env_actif("FORCE_ADMIN_PASSWORD_RESET"):
                 try:
                     mettre_a_jour_mot_de_passe_admin()
                     print(
