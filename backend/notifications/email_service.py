@@ -1,20 +1,21 @@
 """Notifications automatiques envoyees aux utilisateurs (Prompt 13).
 
-Chaque notification est d'abord journalisee en base (table `notification`,
-statut `en_attente`) AVANT toute tentative d'envoi, puis son statut est mis a
-jour a `envoyee` ou `echouee` APRES la tentative d'envoi.
+Flux :
+1. Journalisation en base (`notification`, statut `en_attente`) — RM-100
+2. Envoi SMTP via Flask-Mail (Gmail) — le meme chemin qu'en local
+3. Mise a jour du statut `envoyee` ou `echouee` — RM-101, RM-102
 
-Sur Render (plan gratuit), les ports SMTP 25/465/587 sont bloques : preferer
-une API HTTPS (`SENDGRID_API_KEY` recommande, ou `BREVO_API_KEY`).
-En local, Flask-Mail/SMTP Gmail reste OK.
+Configuration (`.env` / Render) :
+- `MAIL_USERNAME` + `MAIL_PASSWORD` : SMTP Gmail (fonctionne en local)
+- `MAIL_DEFAULT_SENDER` : optionnel (sinon = MAIL_USERNAME)
+- `PUBLIC_BASE_URL` : liens absolus dans les emails (URL Render / tunnel)
 
-Toute exception d'envoi est interceptee (RM-101, RM-102).
+Note Render free : les ports SMTP sont bloques. L'envoi depuis Render
+echouera tant qu'une solution HTTPS n'est pas branchee. En local, rien
+n'a change : Gmail SMTP reste le canal unique et intact.
 """
 
-import json
 import socket
-import urllib.error
-import urllib.request
 
 from flask import current_app, url_for
 from flask_mail import Message
@@ -22,10 +23,8 @@ from flask_mail import Message
 from extensions import db, mail
 from models import Notification, Utilisateur
 
-# SMTP local : coupe apres 15 s pour ne pas faire tomber le worker.
+# Evite de bloquer le worker Flask trop longtemps si SMTP est injoignable.
 SMTP_TIMEOUT_SECONDES = 15
-BREVO_API_URL = "https://api.brevo.com/v3/smtp/email"
-SENDGRID_API_URL = "https://api.sendgrid.com/v3/mail/send"
 
 COULEUR_BBDA = "#1F4E79"
 ADRESSE_BBDA = "01 BP 3926 Ouagadougou 01 : Tél. 25 32 47 50"
@@ -58,13 +57,12 @@ def _enregistrer_notification(destinataire_id, type_notification, sujet, message
         statut="en_attente",
     )
     db.session.add(notification)
-    db.session.flush()  # obtenir notification.id pour les logs eventuels
+    db.session.flush()
     return notification
 
 
 def _gabarit_html(sujet, paragraphes):
-    """Enveloppe le corps d'un email (liste de paragraphes en texte simple)
-    dans un gabarit HTML avec en-tete BBDA Events et pied de page."""
+    """Enveloppe le corps d'un email dans le gabarit HTML BBDA Events."""
     corps = "".join(f"<p style='margin:0 0 12px 0;'>{p}</p>" for p in paragraphes)
     return f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -83,138 +81,22 @@ def _gabarit_html(sujet, paragraphes):
 
 
 def _expediteur():
-    """Adresse d'expedition configuree (MAIL_DEFAULT_SENDER ou MAIL_USERNAME)."""
+    """Adresse From : MAIL_DEFAULT_SENDER, sinon MAIL_USERNAME."""
     return current_app.config.get("MAIL_DEFAULT_SENDER") or current_app.config.get("MAIL_USERNAME")
 
 
-def _canal_email_actif():
-    """Retourne 'sendgrid', 'brevo' ou 'smtp' selon la config."""
-    if (current_app.config.get("SENDGRID_API_KEY") or "").strip():
-        return "sendgrid"
-    if (current_app.config.get("BREVO_API_KEY") or "").strip():
-        return "brevo"
-    if current_app.config.get("MAIL_USERNAME") and current_app.config.get("MAIL_PASSWORD"):
-        return "smtp"
-    return None
-
-
-def _envoyer_via_sendgrid(notification, destinataire_email, corps_html, reply_to=None):
-    """Envoi via API HTTPS SendGrid (activable rapidement avec Single Sender)."""
-    expediteur = _expediteur()
-    if not expediteur:
-        raise RuntimeError("MAIL_USERNAME / MAIL_DEFAULT_SENDER manquant pour SendGrid.")
-
-    payload = {
-        "personalizations": [{"to": [{"email": destinataire_email}]}],
-        "from": {"email": expediteur, "name": "BBDA Events"},
-        "subject": notification.sujet,
-        "content": [{"type": "text/html", "value": corps_html}],
-    }
-    if reply_to:
-        payload["reply_to"] = {"email": reply_to}
-
-    requete = urllib.request.Request(
-        SENDGRID_API_URL,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {current_app.config['SENDGRID_API_KEY']}",
-            "Content-Type": "application/json",
-        },
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(requete, timeout=15) as reponse:
-            # SendGrid repond souvent 202 Accepted sans corps.
-            if reponse.status not in (200, 201, 202):
-                corps = reponse.read().decode("utf-8", errors="replace")
-                raise RuntimeError(f"SendGrid HTTP {reponse.status}: {corps}")
-    except urllib.error.HTTPError as erreur_http:
-        detail = erreur_http.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"SendGrid HTTP {erreur_http.code}: {detail}") from erreur_http
-
-
-def _envoyer_via_brevo(notification, destinataire_email, corps_html, reply_to=None):
-    """Envoi via API HTTPS Brevo (fonctionne sur Render free, contrairement au SMTP)."""
-    expediteur = _expediteur()
-    if not expediteur:
-        raise RuntimeError("MAIL_USERNAME / MAIL_DEFAULT_SENDER manquant pour Brevo.")
-
-    payload = {
-        "sender": {"email": expediteur, "name": "BBDA Events"},
-        "to": [{"email": destinataire_email}],
-        "subject": notification.sujet,
-        "htmlContent": corps_html,
-    }
-    if reply_to:
-        payload["replyTo"] = {"email": reply_to}
-
-    requete = urllib.request.Request(
-        BREVO_API_URL,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "accept": "application/json",
-            "api-key": current_app.config["BREVO_API_KEY"],
-            "content-type": "application/json",
-        },
-        method="POST",
-    )
-    try:
-        with urllib.request.urlopen(requete, timeout=15) as reponse:
-            if reponse.status not in (200, 201, 202):
-                corps = reponse.read().decode("utf-8", errors="replace")
-                raise RuntimeError(f"Brevo HTTP {reponse.status}: {corps}")
-    except urllib.error.HTTPError as erreur_http:
-        detail = erreur_http.read().decode("utf-8", errors="replace")
-        raise RuntimeError(f"Brevo HTTP {erreur_http.code}: {detail}") from erreur_http
-
-
-def tester_envoi_email(destinataire_email):
-    """Envoi de test (admin) : retourne (ok, message_detail).
-
-    N'utilise pas MAIL_SUPPRESS_SEND. Affiche l'erreur API/SMTP complete
-    pour diagnostiquer Render sans Shell.
-    """
-    destinataire_email = (destinataire_email or "").strip().lower()
-    if not destinataire_email or "@" not in destinataire_email:
-        return False, "Indique un email destinataire valide."
-
-    canal = _canal_email_actif()
-    expediteur = _expediteur()
-    if not canal:
-        return (
-            False,
-            "Aucun canal email : ajoute SENDGRID_API_KEY (recommande) ou BREVO_API_KEY, "
-            "plus MAIL_USERNAME = email vérifié chez le fournisseur.",
-        )
-    if canal in ("sendgrid", "brevo") and not expediteur:
-        return False, f"{canal.upper()} est configuré, mais MAIL_USERNAME / MAIL_DEFAULT_SENDER manque."
-
-    class _NotifTest:
-        sujet = "BBDA Events : Test d'envoi email"
-
-    notification = _NotifTest()
-    try:
-        paragraphes = [
-            "Ceci est un email de test depuis l'espace admin BBDA Events.",
-            f"Expéditeur configuré : {expediteur or '(absent)'}",
-            f"Canal : {canal}",
-            "Si tu reçois ce message, les notifications sont opérationnelles.",
-        ]
-        corps_html = _gabarit_html(notification.sujet, paragraphes)
-        if canal == "sendgrid":
-            _envoyer_via_sendgrid(notification, destinataire_email, corps_html)
-        elif canal == "brevo":
-            _envoyer_via_brevo(notification, destinataire_email, corps_html)
-        else:
-            _envoyer_via_smtp(notification, destinataire_email, corps_html)
-        return True, f"Email de test accepté ({canal}). Vérifie la boîte de {destinataire_email} (et les spams)."
-    except Exception as erreur:  # noqa: BLE001
-        current_app.logger.exception("Echec test email admin")
-        return False, f"Échec d'envoi : {erreur}"
+def _smtp_configure():
+    """True si les identifiants Gmail SMTP sont presents."""
+    return bool(current_app.config.get("MAIL_USERNAME") and current_app.config.get("MAIL_PASSWORD"))
 
 
 def _envoyer_via_smtp(notification, destinataire_email, corps_html, reply_to=None):
-    """Envoi SMTP classique (Gmail) — OK en local, souvent bloque sur Render free."""
+    """Envoi SMTP Gmail via Flask-Mail (chemin historique, inchange)."""
+    if not _smtp_configure():
+        raise RuntimeError(
+            "SMTP non configure : definis MAIL_USERNAME et MAIL_PASSWORD "
+            "(mot de passe d'application Gmail) dans .env."
+        )
     timeout_avant = socket.getdefaulttimeout()
     try:
         socket.setdefaulttimeout(SMTP_TIMEOUT_SECONDES)
@@ -232,27 +114,15 @@ def _envoyer_via_smtp(notification, destinataire_email, corps_html, reply_to=Non
 
 
 def _envoyer(notification, destinataire_email, corps_html, reply_to=None):
-    """Envoie la notification (SendGrid / Brevo / SMTP), puis met a jour
-    le statut (RM-101, RM-102)."""
+    """Envoie l'email SMTP puis met a jour le statut (RM-101, RM-102)."""
     if current_app.config.get("MAIL_SUPPRESS_SEND"):
         notification.statut = "envoyee"
         return notification
 
     try:
-        canal = _canal_email_actif()
-        if canal == "sendgrid":
-            _envoyer_via_sendgrid(notification, destinataire_email, corps_html, reply_to=reply_to)
-        elif canal == "brevo":
-            _envoyer_via_brevo(notification, destinataire_email, corps_html, reply_to=reply_to)
-        elif canal == "smtp":
-            _envoyer_via_smtp(notification, destinataire_email, corps_html, reply_to=reply_to)
-        else:
-            raise RuntimeError(
-                "Aucun canal email configure : definis SENDGRID_API_KEY (Render) "
-                "ou BREVO_API_KEY, ou MAIL_USERNAME + MAIL_PASSWORD (SMTP local)."
-            )
+        _envoyer_via_smtp(notification, destinataire_email, corps_html, reply_to=reply_to)
         notification.statut = "envoyee"
-    except (Exception, urllib.error.URLError) as erreur:  # noqa: BLE001
+    except Exception as erreur:  # noqa: BLE001
         notification.statut = "echouee"
         current_app.logger.error(
             "Echec d'envoi de l'email '%s' (notification #%s) : %s",
@@ -263,9 +133,39 @@ def _envoyer(notification, destinataire_email, corps_html, reply_to=None):
     return notification
 
 
+def tester_envoi_email(destinataire_email):
+    """Envoi de test admin (SMTP). Retourne (ok, message)."""
+    destinataire_email = (destinataire_email or "").strip().lower()
+    if not destinataire_email or "@" not in destinataire_email:
+        return False, "Indique un email destinataire valide."
+    if not _smtp_configure():
+        return False, "SMTP non configure : MAIL_USERNAME et MAIL_PASSWORD manquants."
+
+    class _NotifTest:
+        sujet = "BBDA Events : Test d'envoi email"
+
+    notification = _NotifTest()
+    try:
+        paragraphes = [
+            "Ceci est un email de test depuis l'espace admin BBDA Events.",
+            f"Expéditeur : {_expediteur()}",
+            "Canal : SMTP Gmail",
+            "Si tu reçois ce message, l'envoi local / SMTP fonctionne.",
+        ]
+        _envoyer_via_smtp(
+            notification,
+            destinataire_email,
+            _gabarit_html(notification.sujet, paragraphes),
+        )
+        return True, f"Email de test accepté (SMTP). Vérifie {destinataire_email} (et les spams)."
+    except Exception as erreur:  # noqa: BLE001
+        current_app.logger.exception("Echec test email admin")
+        return False, f"Échec d'envoi SMTP : {erreur}"
+
+
 def _boite_dediee_et_admin():
     """Retourne (email_boite_dediee, admin) ou (None, None) si non configurable."""
-    boite = current_app.config.get("MAIL_DEFAULT_SENDER") or current_app.config.get("MAIL_USERNAME")
+    boite = _expediteur()
     admin = Utilisateur.query.filter_by(role="admin").order_by(Utilisateur.id.asc()).first()
     if not boite or admin is None:
         return None, None

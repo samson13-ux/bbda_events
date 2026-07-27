@@ -23,13 +23,12 @@
 </div>
 
 <div class="section-agent">
-    <h2>Test email</h2>
+    <h2>Test email (SMTP Gmail)</h2>
     <p class="sous-titre-section">
-        Canal actif : <strong>{{ email_canal }}</strong>
-        — SendGrid : {% if email_sendgrid_configure %}<strong>oui</strong>{% else %}non{% endif %}
-        — Brevo : {% if email_brevo_configure %}<strong>oui</strong>{% else %}non{% endif %}
+        SMTP : {% if email_smtp_configure %}<strong>configuré</strong>{% else %}<strong>non configuré</strong>{% endif %}
         — Expéditeur : <strong>{{ email_expediteur or "(vide)" }}</strong>
     </p>
+    <p class="sous-titre-section">Fonctionne en local. Sur Render free, le SMTP est bloqué (solution HTTPS à brancher plus tard).</p>
     <form method="post" action="{{ url_for('admin.tester_email') }}">
         {% include '_csrf.html' %}
         <div class="champ-formulaire">

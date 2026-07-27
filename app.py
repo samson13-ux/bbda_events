@@ -41,17 +41,19 @@ def create_app(env=None):
     csrf.init_app(app)
     limiter.init_app(app)
 
-    has_api = app.config.get("SENDGRID_API_KEY") or app.config.get("BREVO_API_KEY")
-    has_smtp = app.config.get("MAIL_USERNAME") and app.config.get("MAIL_PASSWORD")
-    if env == "production" and not app.config.get("TESTING") and not has_api and not has_smtp:
+    if (
+        env == "production"
+        and not app.config.get("TESTING")
+        and not (app.config.get("MAIL_USERNAME") and app.config.get("MAIL_PASSWORD"))
+    ):
         app.logger.warning(
-            "Aucun canal email configure (SENDGRID_API_KEY / BREVO_API_KEY / MAIL_*). "
-            "Sur Render free, utilise SENDGRID_API_KEY : le SMTP est bloque."
+            "MAIL_USERNAME / MAIL_PASSWORD absents : aucun envoi email possible. "
+            "En local utilise Gmail SMTP ; sur Render free le SMTP est bloque."
         )
-    elif env == "production" and not has_api:
+    elif env == "production" and os.environ.get("RENDER"):
         app.logger.warning(
-            "Aucune API email (SENDGRID_API_KEY ou BREVO_API_KEY) : "
-            "le SMTP Gmail echoue souvent sur Render free."
+            "Render free bloque le SMTP : les emails Gmail echoueront ici. "
+            "L'envoi fonctionne en local ; solution HTTPS Render a brancher plus tard."
         )
 
     import models  # noqa: F401 — enregistre les modeles et le user_loader
