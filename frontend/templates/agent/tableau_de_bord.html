@@ -56,12 +56,14 @@
         <tbody>
             {% for declaration in declarations_nouvelles %}
             <tr>
-                <td>{{ declaration.organisateur.utilisateur.prenom }} {{ declaration.organisateur.utilisateur.nom }}</td>
-                <td>{{ declaration.nature_manifestation }}</td>
-                <td>{{ declaration.nom_salle }}, {{ declaration.ville }}</td>
-                <td>{{ declaration.date_evenement.strftime("%d/%m/%Y") }}</td>
-                <td>{{ declaration.date_soumission.strftime("%d/%m/%Y") }}</td>
-                <td><a href="{{ url_for('agent.traiter_declaration', declaration_id=declaration.id) }}">Traiter &rarr;</a></td>
+                <td data-label="Organisateur">{{ declaration.organisateur.utilisateur.prenom }} {{ declaration.organisateur.utilisateur.nom }}</td>
+                <td data-label="Nature">{{ declaration.nature_manifestation }}</td>
+                <td data-label="Lieu">{{ declaration.nom_salle }}, {{ declaration.ville }}</td>
+                <td data-label="Date">{{ declaration.date_evenement.strftime("%d/%m/%Y") }}</td>
+                <td data-label="Soumis le">{{ declaration.date_soumission.strftime("%d/%m/%Y") }}</td>
+                <td class="cellule-actions" data-label="Action">
+                    <a class="lien-action-table" href="{{ url_for('agent.traiter_declaration', declaration_id=declaration.id) }}">Traiter</a>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
@@ -88,15 +90,15 @@
             {% for declaration in declarations_en_cours %}
             {% set css, libelle = statuts_affichage[declaration.statut] %}
             <tr>
-                <td>{{ declaration.organisateur.utilisateur.prenom }} {{ declaration.organisateur.utilisateur.nom }}</td>
-                <td>{{ declaration.nature_manifestation }}</td>
-                <td><span class="badge badge--{{ css }}">{{ libelle }}</span></td>
-                <td>{{ declaration.date_soumission.strftime("%d/%m/%Y") }}</td>
-                <td>
+                <td data-label="Organisateur">{{ declaration.organisateur.utilisateur.prenom }} {{ declaration.organisateur.utilisateur.nom }}</td>
+                <td data-label="Nature">{{ declaration.nature_manifestation }}</td>
+                <td data-label="Statut"><span class="badge badge--{{ css }}">{{ libelle }}</span></td>
+                <td data-label="Soumis le">{{ declaration.date_soumission.strftime("%d/%m/%Y") }}</td>
+                <td class="cellule-actions" data-label="Action">
                     {% if declaration.statut in ("montant_fixe", "paiement_en_attente") %}
-                    <a href="{{ url_for('agent.paiement', declaration_id=declaration.id) }}">Encaisser &rarr;</a>
+                    <a class="lien-action-table" href="{{ url_for('agent.paiement', declaration_id=declaration.id) }}">Encaisser</a>
                     {% else %}
-                    <a href="{{ url_for('agent.traiter_declaration', declaration_id=declaration.id) }}">Voir</a>
+                    <a class="lien-action-table" href="{{ url_for('agent.traiter_declaration', declaration_id=declaration.id) }}">Voir</a>
                     {% endif %}
                 </td>
             </tr>

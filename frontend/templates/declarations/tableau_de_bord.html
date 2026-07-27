@@ -53,15 +53,15 @@
         {% for declaration in declarations %}
         {% set css, libelle = statuts_affichage[declaration.statut] %}
         <tr>
-            <td>{{ declaration.nature_manifestation }}</td>
-            <td>{{ declaration.nom_artiste_evenement }}</td>
-            <td>{{ declaration.date_evenement.strftime("%d/%m/%Y") }}</td>
-            <td><span class="badge badge--{{ css }}">{{ libelle }}</span></td>
-            <td>{{ declaration.date_soumission.strftime("%d/%m/%Y") }}</td>
-            <td class="cellule-actions">
-                <a href="{{ url_for('declarations.detail', declaration_id=declaration.id) }}">Voir</a>
+            <td data-label="Nature">{{ declaration.nature_manifestation }}</td>
+            <td data-label="Événement">{{ declaration.nom_artiste_evenement }}</td>
+            <td data-label="Date">{{ declaration.date_evenement.strftime("%d/%m/%Y") }}</td>
+            <td data-label="Statut"><span class="badge badge--{{ css }}">{{ libelle }}</span></td>
+            <td data-label="Soumis le">{{ declaration.date_soumission.strftime("%d/%m/%Y") }}</td>
+            <td class="cellule-actions" data-label="Actions">
+                <a class="lien-action-table" href="{{ url_for('declarations.detail', declaration_id=declaration.id) }}">Voir</a>
                 {% if declaration.statut == "nouvelle" %}
-                · <a href="{{ url_for('declarations.modifier', declaration_id=declaration.id) }}">Modifier</a>
+                <a class="lien-action-table lien-action-table--secondaire" href="{{ url_for('declarations.modifier', declaration_id=declaration.id) }}">Modifier</a>
                 {% endif %}
             </td>
         </tr>
