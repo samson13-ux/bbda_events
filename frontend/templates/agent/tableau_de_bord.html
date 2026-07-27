@@ -42,6 +42,7 @@
 <div class="section-agent">
     <h2>Déclarations à traiter en priorité</h2>
     {% if declarations_nouvelles %}
+    <div class="enveloppe-tableau">
     <table class="tableau-declarations">
         <thead>
             <tr>
@@ -50,24 +51,25 @@
                 <th>Lieu</th>
                 <th>Date événement</th>
                 <th>Soumis le</th>
-                <th>Action</th>
+                <th class="col-actions">Action</th>
             </tr>
         </thead>
         <tbody>
             {% for declaration in declarations_nouvelles %}
             <tr>
-                <td data-label="Organisateur">{{ declaration.organisateur.utilisateur.prenom }} {{ declaration.organisateur.utilisateur.nom }}</td>
-                <td data-label="Nature">{{ declaration.nature_manifestation }}</td>
-                <td data-label="Lieu">{{ declaration.nom_salle }}, {{ declaration.ville }}</td>
-                <td data-label="Date">{{ declaration.date_evenement.strftime("%d/%m/%Y") }}</td>
-                <td data-label="Soumis le">{{ declaration.date_soumission.strftime("%d/%m/%Y") }}</td>
-                <td class="cellule-actions" data-label="Action">
+                <td>{{ declaration.organisateur.utilisateur.prenom }} {{ declaration.organisateur.utilisateur.nom }}</td>
+                <td>{{ declaration.nature_manifestation }}</td>
+                <td>{{ declaration.nom_salle }}, {{ declaration.ville }}</td>
+                <td>{{ declaration.date_evenement.strftime("%d/%m/%Y") }}</td>
+                <td>{{ declaration.date_soumission.strftime("%d/%m/%Y") }}</td>
+                <td class="cellule-actions">
                     <a class="lien-action-table" href="{{ url_for('agent.traiter_declaration', declaration_id=declaration.id) }}">Traiter</a>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+    </div>
     {% else %}
     <p class="message-vide">Aucune nouvelle déclaration en attente de traitement.</p>
     {% endif %}
@@ -76,6 +78,7 @@
 <div class="section-agent">
     <h2>En cours de traitement</h2>
     {% if declarations_en_cours %}
+    <div class="enveloppe-tableau">
     <table class="tableau-declarations">
         <thead>
             <tr>
@@ -83,18 +86,18 @@
                 <th>Nature</th>
                 <th>Statut</th>
                 <th>Soumis le</th>
-                <th>Action</th>
+                <th class="col-actions">Action</th>
             </tr>
         </thead>
         <tbody>
             {% for declaration in declarations_en_cours %}
             {% set css, libelle = statuts_affichage[declaration.statut] %}
             <tr>
-                <td data-label="Organisateur">{{ declaration.organisateur.utilisateur.prenom }} {{ declaration.organisateur.utilisateur.nom }}</td>
-                <td data-label="Nature">{{ declaration.nature_manifestation }}</td>
-                <td data-label="Statut"><span class="badge badge--{{ css }}">{{ libelle }}</span></td>
-                <td data-label="Soumis le">{{ declaration.date_soumission.strftime("%d/%m/%Y") }}</td>
-                <td class="cellule-actions" data-label="Action">
+                <td>{{ declaration.organisateur.utilisateur.prenom }} {{ declaration.organisateur.utilisateur.nom }}</td>
+                <td>{{ declaration.nature_manifestation }}</td>
+                <td><span class="badge badge--{{ css }}">{{ libelle }}</span></td>
+                <td>{{ declaration.date_soumission.strftime("%d/%m/%Y") }}</td>
+                <td class="cellule-actions">
                     {% if declaration.statut in ("montant_fixe", "paiement_en_attente") %}
                     <a class="lien-action-table" href="{{ url_for('agent.paiement', declaration_id=declaration.id) }}">Encaisser</a>
                     {% else %}
@@ -105,6 +108,7 @@
             {% endfor %}
         </tbody>
     </table>
+    </div>
     {% else %}
     <p class="message-vide">Aucune déclaration en cours de traitement.</p>
     {% endif %}

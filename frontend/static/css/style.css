@@ -865,10 +865,24 @@ a:hover {
     color: var(--couleur-primaire);
     font-weight: 600;
     text-decoration: none;
+    display: inline-block;
+    padding: 0.35rem 0.25rem;
 }
 
 .lien-action-table:hover {
     text-decoration: underline;
+}
+
+.lien-action-table + .lien-action-table {
+    margin-left: 0.35rem;
+}
+
+.lien-action-table + .lien-action-table::before {
+    content: "·";
+    margin-right: 0.45rem;
+    color: var(--couleur-texte-att);
+    font-weight: 400;
+    text-decoration: none;
 }
 
 .carte-formulaire input,
@@ -901,84 +915,28 @@ a:hover {
         text-align: center;
     }
 
-    /* Cartes mobiles : le bouton Voir/Traiter reste toujours visible */
-    .tableau-declarations {
-        display: block;
-        width: 100%;
-        overflow: visible;
-        border: none;
+    /* Tableau structure conserve : compact + Actions toujours visibles */
+    .enveloppe-tableau {
+        margin: 0 -0.15rem;
+        width: calc(100% + 0.3rem);
     }
 
-    .tableau-declarations thead {
-        display: none;
+    .enveloppe-tableau .tableau-declarations {
+        min-width: 34rem;
     }
 
-    .tableau-declarations tbody {
-        display: block;
-    }
-
-    .tableau-declarations tr {
-        display: block;
-        background: var(--couleur-carte, #fff);
-        border: 1px solid var(--couleur-bordure);
-        border-radius: var(--rayon);
-        margin-bottom: 0.85rem;
-        padding: 0.85rem 1rem;
-    }
-
-    .tableau-declarations th,
-    .tableau-declarations td {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 0.75rem;
-        width: 100%;
-        border: none;
-        padding: 0.4rem 0;
-        text-align: right;
-    }
-
-    .tableau-declarations td::before {
-        content: attr(data-label);
-        font-weight: 600;
-        color: var(--couleur-texte-att);
-        text-align: left;
-        flex: 0 1 42%;
-    }
-
-    .tableau-declarations td:not([data-label])::before {
-        content: none;
-    }
-
-    .tableau-declarations td:not([data-label]) {
-        display: block;
-        text-align: left;
-    }
-
-    .tableau-declarations .cellule-actions {
-        white-space: normal;
-        flex-wrap: wrap;
-        justify-content: flex-end;
-        margin-top: 0.45rem;
-        padding-top: 0.75rem;
-        border-top: 1px solid var(--couleur-bordure);
-        gap: 0.5rem;
+    .enveloppe-tableau .tableau-declarations th,
+    .enveloppe-tableau .tableau-declarations td {
+        padding: 0.55rem 0.55rem;
+        font-size: 0.88rem;
     }
 
     .lien-action-table {
-        display: inline-block;
-        padding: 0.55rem 1rem;
-        background: var(--couleur-primaire);
-        color: #fff !important;
-        border-radius: var(--rayon);
-        text-decoration: none !important;
-        font-weight: 600;
-    }
-
-    .lien-action-table--secondaire {
-        background: transparent;
-        color: var(--couleur-primaire) !important;
-        border: 1px solid var(--couleur-primaire);
+        padding: 0.45rem 0.4rem;
+        min-height: 2.5rem;
+        line-height: 1.2;
+        display: inline-flex;
+        align-items: center;
     }
 
     .cartes-statistiques {
@@ -1182,13 +1140,27 @@ a.carte-stat:hover {
     text-decoration: none;
 }
 
+.enveloppe-tableau {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--couleur-bordure);
+    border-radius: var(--rayon);
+    background-color: var(--couleur-carte);
+}
+
 .tableau-declarations {
     width: 100%;
     border-collapse: collapse;
     background-color: var(--couleur-carte);
     border: 1px solid var(--couleur-bordure);
     border-radius: var(--rayon);
-    overflow: hidden;
+}
+
+.enveloppe-tableau .tableau-declarations {
+    min-width: 38rem;
+    border: none;
+    border-radius: 0;
 }
 
 .tableau-declarations th,
@@ -1205,6 +1177,25 @@ a.carte-stat:hover {
 
 .tableau-declarations tbody tr:last-child td {
     border-bottom: none;
+}
+
+.enveloppe-tableau .tableau-declarations th.col-actions,
+.enveloppe-tableau .tableau-declarations td.cellule-actions {
+    position: sticky;
+    right: 0;
+    z-index: 2;
+    background-color: var(--couleur-carte);
+    box-shadow: -6px 0 10px -6px rgba(27, 58, 44, 0.18);
+    min-width: 6.5rem;
+}
+
+.enveloppe-tableau .tableau-declarations th.col-actions {
+    background-color: var(--couleur-secondaire);
+    z-index: 3;
+}
+
+.enveloppe-tableau .tableau-declarations tbody tr:hover td.cellule-actions {
+    background-color: color-mix(in srgb, var(--couleur-secondaire) 55%, #fff);
 }
 
 .message-vide {
