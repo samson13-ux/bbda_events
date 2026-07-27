@@ -445,8 +445,8 @@ def seed_base_vide():
     mot_de_passe = mot_de_passe_bootstrap_admin()
     mdp = hacher_mot_de_passe(mot_de_passe)
     admin = Utilisateur(
-        nom="Traore",
-        prenom="Awa",
+        nom="BBDA",
+        prenom="SAMSON",
         email=EMAIL_ADMIN_BOOTSTRAP,
         mot_de_passe=mdp,
         role="admin",
