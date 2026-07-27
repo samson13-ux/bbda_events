@@ -131,6 +131,26 @@ def test_telechargement_refuse_a_un_autre_organisateur(app, client):
     assert reponse.status_code == 404
 
 
+def test_telechargement_regenere_le_pdf_si_fichier_absent(app, client):
+    """Sur Render le PDF disparait apres redeploy : on le regenere a la volee."""
+    declaration_id = creer_scenario_complet(app)
+    with app.app_context():
+        declaration = Declaration.query.get(declaration_id)
+        chemin = declaration.quittance.fichier_pdf_path
+        assert os.path.exists(chemin)
+        os.remove(chemin)
+        assert not os.path.exists(chemin)
+
+    connecter(client, "orga@example.com")
+    reponse = client.get(f"/exports/quittance/{declaration_id}")
+
+    assert reponse.status_code == 200
+    assert reponse.content_type == "application/pdf"
+    with app.app_context():
+        declaration = Declaration.query.get(declaration_id)
+        assert os.path.exists(declaration.quittance.fichier_pdf_path)
+
+
 def test_telechargement_404_si_pas_de_quittance(app, client):
     """Impossible de telecharger une quittance qui n'existe pas encore."""
     with app.app_context():

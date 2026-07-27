@@ -242,17 +242,47 @@ def _pied(c, quittance, declaration, depuis_haut):
     c.drawCentredString(_x(LARGEUR_PAGE_MM - MARGE - 30), _y(depuis_haut), nom_agent)
 
 
+def _candidats_chemin(chemin_stocke):
+    """Chemins possibles pour un PDF deja enregistre (relatif, absolu, basename)."""
+    if not chemin_stocke:
+        return []
+    candidats = [chemin_stocke, os.path.abspath(chemin_stocke)]
+    dossier = current_app.config["QUITTANCE_FOLDER"]
+    candidats.append(os.path.join(dossier, os.path.basename(chemin_stocke)))
+    # Deduplique en conservant l'ordre
+    vus = set()
+    uniques = []
+    for candidat in candidats:
+        if candidat not in vus:
+            vus.add(candidat)
+            uniques.append(candidat)
+    return uniques
+
+
+def resoudre_chemin_pdf(quittance):
+    """Retourne un chemin existant vers le PDF, ou None s'il a disparu."""
+    for candidat in _candidats_chemin(quittance.fichier_pdf_path):
+        if candidat and os.path.exists(candidat):
+            return os.path.abspath(candidat)
+    # Fichier regenerate ailleurs sous le nom attendu
+    attendu = os.path.join(
+        current_app.config["QUITTANCE_FOLDER"],
+        f"quittance_{quittance.numero_quittance}.pdf",
+    )
+    if os.path.exists(attendu):
+        return os.path.abspath(attendu)
+    return None
+
+
 def generer_pdf_quittance(quittance):
-    """Genere le PDF d'une quittance et retourne le chemin du fichier cree
-    (relatif a la racine du projet), au format
-    `frontend/static/quittances/quittance_<numero>.pdf`."""
+    """Genere le PDF d'une quittance et retourne le chemin absolu du fichier."""
     declaration = quittance.declaration
     paiement = declaration.paiements[-1] if declaration.paiements else None
 
     dossier_quittances = current_app.config["QUITTANCE_FOLDER"]
     os.makedirs(dossier_quittances, exist_ok=True)
     nom_fichier = f"quittance_{quittance.numero_quittance}.pdf"
-    chemin_fichier = os.path.join(dossier_quittances, nom_fichier)
+    chemin_fichier = os.path.abspath(os.path.join(dossier_quittances, nom_fichier))
 
     c = canvas.Canvas(chemin_fichier, pagesize=A4)
     c.setTitle(f"Quittance BBDA n° {quittance.numero_quittance}")
@@ -265,3 +295,20 @@ def generer_pdf_quittance(quittance):
     c.showPage()
     c.save()
     return chemin_fichier
+
+
+def assurer_fichier_pdf(quittance):
+    """Garantit un PDF sur disque (regenere si absent — disque ephemere Render).
+
+    Met a jour `fichier_pdf_path` si regeneration. Ne commit pas : le caller
+    decide (flush pendant paiement, commit pendant telechargement).
+    """
+    existant = resoudre_chemin_pdf(quittance)
+    if existant:
+        if quittance.fichier_pdf_path != existant:
+            quittance.fichier_pdf_path = existant
+        return existant
+
+    chemin = generer_pdf_quittance(quittance)
+    quittance.fichier_pdf_path = chemin
+    return chemin

@@ -52,7 +52,12 @@ class Config:
     # URL publique (tunnel Cloudflare / hebergement). Si defini, les liens
     # des emails pointent vers cette adresse au lieu de 127.0.0.1.
     # Exemple : https://xxxx.trycloudflare.com
-    PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "").rstrip("/")
+    # Sur Render : RENDER_EXTERNAL_URL est fourni automatiquement.
+    PUBLIC_BASE_URL = (
+        os.environ.get("PUBLIC_BASE_URL")
+        or os.environ.get("RENDER_EXTERNAL_URL")
+        or ""
+    ).rstrip("/")
 
     # Partie 2 securite : CSRF + rate-limit
     WTF_CSRF_ENABLED = True

@@ -8,6 +8,9 @@ integre egalement les arrieres pre-existants de l'organisateur
 (`droit_arriere`) via le moteur de gestion des arrieres. Le lien de
 telechargement de l'espace organisateur (Prompt 8) sert ce fichier avec
 `send_file`.
+
+Sur Render le disque est ephemere : si le PDF a disparu apres un redeploy,
+`assurer_fichier_pdf()` le regenere a la volee depuis les donnees en base.
 """
 
 import os
@@ -21,7 +24,7 @@ from extensions import db
 from models import Declaration, Quittance
 
 from . import exports_bp
-from .pdf_generator import generer_pdf_quittance
+from .pdf_generator import assurer_fichier_pdf, generer_pdf_quittance
 
 
 def generer_quittance(declaration, agent):
@@ -87,14 +90,25 @@ def generer_quittance(declaration, agent):
 @exports_bp.route("/quittance/<int:declaration_id>")
 @role_required("organisateur")
 def quittance(declaration_id):
-    """Telechargement de la quittance PDF d'une declaration (RM-050 a RM-054)."""
+    """Telechargement de la quittance PDF d'une declaration (RM-050 a RM-054).
+
+    Regenere le PDF si le fichier a disparu (disque ephemere Render).
+    """
     declaration = Declaration.query.get_or_404(declaration_id)
     if declaration.organisateur_id != current_user.organisateur.id:
         abort(404)
-    if declaration.quittance is None or not declaration.quittance.fichier_pdf_path:
+    if declaration.quittance is None:
         abort(404)
-    if not os.path.exists(declaration.quittance.fichier_pdf_path):
+
+    try:
+        chemin = assurer_fichier_pdf(declaration.quittance)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        abort(404)
+
+    if not chemin or not os.path.exists(chemin):
         abort(404)
 
     nom_telechargement = f"quittance_BBDA_{declaration.quittance.numero_quittance}.pdf"
-    return send_file(declaration.quittance.fichier_pdf_path, as_attachment=True, download_name=nom_telechargement)
+    return send_file(chemin, as_attachment=True, download_name=nom_telechargement)

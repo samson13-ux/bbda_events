@@ -12,7 +12,9 @@ Configuration :
 - Render : SENDGRID_API_KEY + MAIL_USERNAME (= email Single Sender verifie)
 """
 
+import base64
 import json
+import os
 import socket
 import urllib.error
 import urllib.request
@@ -102,7 +104,12 @@ def _canal_actif():
     return None
 
 
-def _envoyer_via_sendgrid(notification, destinataire_email, corps_html, reply_to=None):
+def _normaliser_pieces_jointes(pieces_jointes):
+    """Liste de dicts {filename, content_type, data} (data = bytes)."""
+    return list(pieces_jointes or [])
+
+
+def _envoyer_via_sendgrid(notification, destinataire_email, corps_html, reply_to=None, pieces_jointes=None):
     """Envoi via API HTTPS SendGrid (Render free)."""
     expediteur = _expediteur()
     if not expediteur:
@@ -119,6 +126,18 @@ def _envoyer_via_sendgrid(notification, destinataire_email, corps_html, reply_to
     if reply_to:
         payload["reply_to"] = {"email": reply_to}
 
+    pieces = _normaliser_pieces_jointes(pieces_jointes)
+    if pieces:
+        payload["attachments"] = [
+            {
+                "content": base64.b64encode(piece["data"]).decode("ascii"),
+                "type": piece.get("content_type") or "application/octet-stream",
+                "filename": piece["filename"],
+                "disposition": "attachment",
+            }
+            for piece in pieces
+        ]
+
     requete = urllib.request.Request(
         SENDGRID_API_URL,
         data=json.dumps(payload).encode("utf-8"),
@@ -129,7 +148,7 @@ def _envoyer_via_sendgrid(notification, destinataire_email, corps_html, reply_to
         method="POST",
     )
     try:
-        with urllib.request.urlopen(requete, timeout=15) as reponse:
+        with urllib.request.urlopen(requete, timeout=30) as reponse:
             if reponse.status not in (200, 201, 202):
                 corps = reponse.read().decode("utf-8", errors="replace")
                 raise RuntimeError(f"SendGrid HTTP {reponse.status}: {corps}")
@@ -138,7 +157,7 @@ def _envoyer_via_sendgrid(notification, destinataire_email, corps_html, reply_to
         raise RuntimeError(f"SendGrid HTTP {erreur_http.code}: {detail}") from erreur_http
 
 
-def _envoyer_via_smtp(notification, destinataire_email, corps_html, reply_to=None):
+def _envoyer_via_smtp(notification, destinataire_email, corps_html, reply_to=None, pieces_jointes=None):
     """Envoi SMTP Gmail via Flask-Mail (chemin local, inchange)."""
     if not _smtp_configure():
         raise RuntimeError(
@@ -156,18 +175,36 @@ def _envoyer_via_smtp(notification, destinataire_email, corps_html, reply_to=Non
         )
         if reply_to:
             message.reply_to = reply_to
+        for piece in _normaliser_pieces_jointes(pieces_jointes):
+            message.attach(
+                piece["filename"],
+                piece.get("content_type") or "application/octet-stream",
+                piece["data"],
+            )
         mail.send(message)
     finally:
         socket.setdefaulttimeout(timeout_avant)
 
 
-def _dispatch_envoi(notification, destinataire_email, corps_html, reply_to=None):
+def _dispatch_envoi(notification, destinataire_email, corps_html, reply_to=None, pieces_jointes=None):
     """Choisit SendGrid (prioritaire) ou SMTP."""
     canal = _canal_actif()
     if canal == "sendgrid":
-        _envoyer_via_sendgrid(notification, destinataire_email, corps_html, reply_to=reply_to)
+        _envoyer_via_sendgrid(
+            notification,
+            destinataire_email,
+            corps_html,
+            reply_to=reply_to,
+            pieces_jointes=pieces_jointes,
+        )
     elif canal == "smtp":
-        _envoyer_via_smtp(notification, destinataire_email, corps_html, reply_to=reply_to)
+        _envoyer_via_smtp(
+            notification,
+            destinataire_email,
+            corps_html,
+            reply_to=reply_to,
+            pieces_jointes=pieces_jointes,
+        )
     else:
         raise RuntimeError(
             "Aucun canal email : definis SENDGRID_API_KEY + MAIL_USERNAME (Render) "
@@ -176,14 +213,20 @@ def _dispatch_envoi(notification, destinataire_email, corps_html, reply_to=None)
     return canal
 
 
-def _envoyer(notification, destinataire_email, corps_html, reply_to=None):
+def _envoyer(notification, destinataire_email, corps_html, reply_to=None, pieces_jointes=None):
     """Envoie l'email puis met a jour le statut (RM-101, RM-102)."""
     if current_app.config.get("MAIL_SUPPRESS_SEND"):
         notification.statut = "envoyee"
         return notification
 
     try:
-        _dispatch_envoi(notification, destinataire_email, corps_html, reply_to=reply_to)
+        _dispatch_envoi(
+            notification,
+            destinataire_email,
+            corps_html,
+            reply_to=reply_to,
+            pieces_jointes=pieces_jointes,
+        )
         notification.statut = "envoyee"
     except Exception as erreur:  # noqa: BLE001
         notification.statut = "echouee"
@@ -194,6 +237,18 @@ def _envoyer(notification, destinataire_email, corps_html, reply_to=None):
             erreur,
         )
     return notification
+
+
+def _piece_jointe_pdf(chemin, nom_fichier):
+    """Lit un PDF disque pour piece jointe email, ou None si absent."""
+    if not chemin or not os.path.exists(chemin):
+        return None
+    with open(chemin, "rb") as fichier:
+        return {
+            "filename": nom_fichier,
+            "content_type": "application/pdf",
+            "data": fichier.read(),
+        }
 
 
 def tester_envoi_email(destinataire_email):
@@ -349,26 +404,36 @@ def notifier_montant_fixe(declaration):
 
 def notifier_quittance_disponible(declaration):
     """FONCTION 3 (RM-054) : informe l'organisateur que sa quittance est
-    prete a etre telechargee depuis son espace."""
+    prete, avec le PDF en piece jointe + lien vers l'espace (apres connexion)."""
+    from backend.exports.pdf_generator import assurer_fichier_pdf
+
     utilisateur = declaration.organisateur.utilisateur
     quittance = declaration.quittance
     sujet = "BBDA Events : Votre quittance est disponible"
     try:
-        lien = _lien_externe("exports.quittance", declaration_id=declaration.id)
+        lien_detail = _lien_externe("declarations.detail", declaration_id=declaration.id)
     except RuntimeError:
-        lien = "votre espace organisateur BBDA Events"
+        lien_detail = "votre espace organisateur BBDA Events"
+    try:
+        lien_pdf = _lien_externe("exports.quittance", declaration_id=declaration.id)
+    except RuntimeError:
+        lien_pdf = lien_detail
+
     paragraphes = [
         f"Bonjour {declaration.prenom_demandeur} {declaration.nom_demandeur},",
         f"Votre paiement pour l'événement « {declaration.nom_artiste_evenement} » a bien été enregistré.",
-        f"Votre quittance n° {quittance.numero_quittance} est désormais disponible au téléchargement : "
-        f"<a href='{lien}'>télécharger ma quittance</a>.",
+        f"Votre quittance n° {quittance.numero_quittance} est jointe à cet email (PDF).",
+        f"Vous pouvez aussi la télécharger depuis votre espace : "
+        f"<a href='{lien_pdf}'>télécharger ma quittance</a> "
+        f"(connectez-vous d'abord si besoin) ou ouvrir "
+        f"<a href='{lien_detail}'>le détail de votre déclaration</a>.",
         "Cordialement,<br>Le Bureau Burkinabè du Droit d'Auteur.",
     ]
     message = (
         f"Bonjour {declaration.prenom_demandeur},\n\n"
         f"Votre paiement pour l'evenement « {declaration.nom_artiste_evenement} » a bien ete enregistre.\n"
-        f"Votre quittance (n° {quittance.numero_quittance}) est desormais disponible au telechargement "
-        "depuis votre espace organisateur.\n\nCordialement,\nLe Bureau Burkinabe du Droit d'Auteur."
+        f"Votre quittance (n° {quittance.numero_quittance}) est jointe a cet email.\n\n"
+        "Cordialement,\nLe Bureau Burkinabe du Droit d'Auteur."
     )
     notification = _enregistrer_notification(
         destinataire_id=utilisateur.id,
@@ -376,7 +441,29 @@ def notifier_quittance_disponible(declaration):
         sujet=sujet,
         message=message,
     )
-    return _envoyer(notification, utilisateur.email, _gabarit_html(sujet, paragraphes))
+
+    pieces = []
+    try:
+        chemin = assurer_fichier_pdf(quittance)
+        piece = _piece_jointe_pdf(
+            chemin,
+            f"quittance_BBDA_{quittance.numero_quittance}.pdf",
+        )
+        if piece:
+            pieces.append(piece)
+    except Exception as erreur:  # noqa: BLE001
+        current_app.logger.error(
+            "Impossible de joindre la quittance #%s : %s",
+            quittance.id if quittance else "?",
+            erreur,
+        )
+
+    return _envoyer(
+        notification,
+        utilisateur.email,
+        _gabarit_html(sujet, paragraphes),
+        pieces_jointes=pieces,
+    )
 
 
 def notifier_rappel_arriere(arriere):
