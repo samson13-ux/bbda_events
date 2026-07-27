@@ -110,10 +110,58 @@ def _envoyer_via_brevo(notification, destinataire_email, corps_html, reply_to=No
         },
         method="POST",
     )
-    with urllib.request.urlopen(requete, timeout=15) as reponse:
-        if reponse.status not in (200, 201, 202):
-            corps = reponse.read().decode("utf-8", errors="replace")
-            raise RuntimeError(f"Brevo HTTP {reponse.status}: {corps}")
+    try:
+        with urllib.request.urlopen(requete, timeout=15) as reponse:
+            if reponse.status not in (200, 201, 202):
+                corps = reponse.read().decode("utf-8", errors="replace")
+                raise RuntimeError(f"Brevo HTTP {reponse.status}: {corps}")
+    except urllib.error.HTTPError as erreur_http:
+        detail = erreur_http.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"Brevo HTTP {erreur_http.code}: {detail}") from erreur_http
+
+
+def tester_envoi_email(destinataire_email):
+    """Envoi de test (admin) : retourne (ok, message_detail).
+
+    N'utilise pas MAIL_SUPPRESS_SEND. Affiche l'erreur Brevo/SMTP complete
+    pour diagnostiquer Render sans Shell.
+    """
+    destinataire_email = (destinataire_email or "").strip().lower()
+    if not destinataire_email or "@" not in destinataire_email:
+        return False, "Indique un email destinataire valide."
+
+    cle_brevo = (current_app.config.get("BREVO_API_KEY") or "").strip()
+    expediteur = _expediteur()
+    if not cle_brevo and not (
+        current_app.config.get("MAIL_USERNAME") and current_app.config.get("MAIL_PASSWORD")
+    ):
+        return (
+            False,
+            "Aucun canal email : ajoute BREVO_API_KEY (et MAIL_USERNAME = email vérifié Brevo) sur Render.",
+        )
+    if cle_brevo and not expediteur:
+        return False, "BREVO_API_KEY est présent, mais MAIL_USERNAME / MAIL_DEFAULT_SENDER manque."
+
+    class _NotifTest:
+        sujet = "BBDA Events : Test d'envoi email"
+
+    notification = _NotifTest()
+    try:
+        paragraphes = [
+            "Ceci est un email de test depuis l'espace admin BBDA Events.",
+            f"Expéditeur configuré : {expediteur or '(absent)'}",
+            f"Canal : {'Brevo API' if cle_brevo else 'SMTP'}",
+            "Si tu reçois ce message, les notifications sont opérationnelles.",
+        ]
+        corps_html = _gabarit_html(notification.sujet, paragraphes)
+        if cle_brevo:
+            _envoyer_via_brevo(notification, destinataire_email, corps_html)
+        else:
+            _envoyer_via_smtp(notification, destinataire_email, corps_html)
+        return True, f"Email de test accepté par le serveur. Vérifie la boîte de {destinataire_email} (et les spams)."
+    except Exception as erreur:  # noqa: BLE001
+        current_app.logger.exception("Echec test email admin")
+        return False, f"Échec d'envoi : {erreur}"
 
 
 def _envoyer_via_smtp(notification, destinataire_email, corps_html, reply_to=None):
