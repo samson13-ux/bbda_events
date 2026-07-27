@@ -5,6 +5,7 @@
         <div class="sidebar-admin__logo">BBDA Events : Admin</div>
         <nav class="sidebar-admin__menu">
             <a href="{{ url_for('admin.tableau_de_bord') }}" class="{{ 'actif' if request.endpoint == 'admin.tableau_de_bord' else '' }}">Tableau de bord</a>
+            <a href="{{ url_for('agent.tableau_de_bord') }}">Traiter les déclarations</a>
             <a href="{{ url_for('admin.statistiques') }}" class="{{ 'actif' if request.endpoint == 'admin.statistiques' else '' }}">Statistiques</a>
             <a href="{{ url_for('admin.messages_contact') }}" class="{{ 'actif' if request.endpoint and 'messages_contact' in request.endpoint else '' }}">Messages contact</a>
             <a href="{{ url_for('admin.evenements_publics') }}" class="{{ 'actif' if request.endpoint and 'evenement' in (request.endpoint or '') else '' }}">Événements publics</a>
