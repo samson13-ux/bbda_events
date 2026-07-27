@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
     initialiserMenuLegalPublic();
     initialiserRevealAccueil();
     initialiserDiaporamaHeros();
+    initialiserAffichageMotDePasse();
 });
 
 function initialiserFermetureMessagesFlash() {
@@ -326,4 +327,37 @@ function basculerPrecision(idDeclencheur, idChampPrecision, selecteurGroupe) {
         });
     }
     mettreAJour();
+}
+
+// Bouton « Voir / Masquer » sur tous les champs mot de passe (connexion,
+// inscription, reset, creation d'agent, etc.).
+function initialiserAffichageMotDePasse() {
+    document.querySelectorAll('input[type="password"]').forEach(function (champ) {
+        if (champ.closest(".champ-mot-de-passe")) {
+            return;
+        }
+
+        var enrobage = document.createElement("div");
+        enrobage.className = "champ-mot-de-passe";
+        champ.parentNode.insertBefore(enrobage, champ);
+        enrobage.appendChild(champ);
+
+        var bouton = document.createElement("button");
+        bouton.type = "button";
+        bouton.className = "bouton-voir-mdp";
+        bouton.textContent = "Voir";
+        bouton.setAttribute("aria-label", "Afficher le mot de passe");
+        bouton.setAttribute("aria-pressed", "false");
+        bouton.addEventListener("click", function () {
+            var estMasque = champ.type === "password";
+            champ.type = estMasque ? "text" : "password";
+            bouton.textContent = estMasque ? "Masquer" : "Voir";
+            bouton.setAttribute("aria-pressed", estMasque ? "true" : "false");
+            bouton.setAttribute(
+                "aria-label",
+                estMasque ? "Masquer le mot de passe" : "Afficher le mot de passe"
+            );
+        });
+        enrobage.appendChild(bouton);
+    });
 }

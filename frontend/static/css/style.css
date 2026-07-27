@@ -219,6 +219,42 @@ a:hover {
     box-shadow: 0 0 0 3px rgba(47, 107, 79, 0.15);
 }
 
+.champ-mot-de-passe {
+    position: relative;
+    display: block;
+}
+
+.champ-mot-de-passe input {
+    width: 100%;
+    padding-right: 4.5rem;
+}
+
+.bouton-voir-mdp {
+    position: absolute;
+    right: 0.35rem;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    color: var(--couleur-primaire);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0.35rem 0.5rem;
+    border-radius: var(--rayon);
+}
+
+.bouton-voir-mdp:hover,
+.bouton-voir-mdp:focus-visible {
+    background: var(--couleur-secondaire);
+    outline: none;
+}
+
+.bouton-voir-mdp[aria-pressed="true"] {
+    color: var(--couleur-texte-att);
+}
+
 .ligne-deux-colonnes {
     display: grid;
     grid-template-columns: 1fr 1fr;
