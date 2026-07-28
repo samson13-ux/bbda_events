@@ -4,11 +4,93 @@
 
 ## Informations générales
 
-- **SGBD** : MySQL
-- **Base de données** : `bbda_events_db`
+- **SGBD** : MySQL (local) ; PostgreSQL (production Render)
+- **Base de données** : `bbda_events_db` (local)
 - **Encodage** : `utf8mb4_unicode_ci`
-- **Moteur** : InnoDB
+- **Moteur** : InnoDB (MySQL)
 - **Nombre de tables** : 12
+- **Modèles code** : `models.py` (SQLAlchemy)
+- **Règles métier** : `REGLES_METIER.md`
+
+---
+
+## Fonctionnement en lien avec le site (explications)
+
+Cette section explique **en texte** comment la base fonctionne avec le site : qui fait quoi, quelles tables sont touchées, quelles relations existent. Ce n’est pas seulement la liste des colonnes : c’est le circuit métier → écrans → tables. Le détail technique colonne par colonne se trouve plus bas dans ce même fichier.
+
+### Idée générale
+
+Imagine la plateforme comme un **dossier administratif numérique**. Ce dossier, c’est une déclaration d’événement. Il naît quand un organisateur remplit le formulaire, puis il avance étape par étape : l’agent l’évalue, le paiement est enregistré, la quittance est délivrée. À chaque étape du site, une ou plusieurs lignes sont créées ou mises à jour dans la base.
+
+Le fil conducteur ressemble à ceci : d’abord l’inscription crée un compte (`utilisateur`) et, pour un organisateur, un profil (`organisateur`) ; ensuite la déclaration crée le dossier (`declaration`) avec ses artistes (`liste_artiste`) et souvent un email journalisé (`notification`) ; puis l’agent fixe le montant dans `evaluation_agent` ; ensuite un ou plusieurs `paiement` sont enregistrés ; s’il reste de l’argent dû, un `arriere` apparaît ; enfin, quand tout est soldé, une `quittance` est créée et le dossier peut, si l’option a été cochée, apparaître sur la face publique.
+
+Il n’y a pas trois bases différentes selon les rôles. Il y a **une seule base**, et trois façons de s’en servir. L’**organisateur** se connecte via `utilisateur` et possède un profil dans `organisateur` : il déclare des événements, suit ses dossiers et télécharge sa quittance. L’**agent** se connecte aussi via `utilisateur`, mais avec le rôle agent : il n’a pas de profil organisateur ; il évalue les dossiers, confirme les paiements reçus au guichet, et gère les arriérés ou la surveillance. L’**administrateur** est encore un `utilisateur` (rôle admin) : il crée les comptes agents, règle les paramètres système et consulte les statistiques globales.
+
+### À quoi sert chaque table sur le site
+
+La table `utilisateur` alimente les pages d’inscription, de connexion et de déconnexion. Elle stocke l’identité de connexion : nom, prénom, email, mot de passe (toujours sous forme de hash bcrypt, jamais en clair), le rôle (`organisateur`, `agent` ou `admin`) et le statut du compte (`actif` ou `inactif`). Un email ne peut appartenir qu’à un seul compte. C’est la porte d’entrée de toute session : Flask-Login recharge l’utilisateur à partir de l’identifiant stocké dans la session. Un agent ou un administrateur existe uniquement dans `utilisateur` : il n’a **pas** de ligne dans `organisateur`, car ce profil est réservé aux personnes qui organisent des événements.
+
+La table `organisateur` est créée automatiquement quand quelqu’un s’inscrit comme organisateur sur le site public. Elle complète le compte de connexion avec des informations métier : la qualité (promoteur, association, directeur de salle…), le téléphone, et surtout le **statut du compte organisateur** (`actif`, `arriere`, `bloque`, `surveillance`). Ce statut-là n’est pas le même que le statut « actif / inactif » de `utilisateur` : il dit si l’organisateur peut encore déposer de nouvelles déclarations, s’il est endetté, bloqué, ou placé sous surveillance par un agent. La relation est un-pour-un : un utilisateur organisateur correspond à exactement un profil organisateur (`organisateur.utilisateur_id` → `utilisateur.id`).
+
+La table `declaration` est la table centrale du site. Elle alimente le formulaire « Nouvelle déclaration », le tableau de bord de l’organisateur, l’écran de traitement de l’agent, et éventuellement la page publique d’un événement (seulement s’il est promu et quittancé). Chaque ligne décrit un événement occasionnel (identité du demandeur, salle, date, capacité, options de promotion, etc.). Le champ le plus important pour le fonctionnement du site est le **statut** du dossier : c’est lui qui décide ce que l’organisateur et l’agent ont le droit de faire. Un organisateur peut avoir plusieurs déclarations (relation un-pour-plusieurs via `declaration.organisateur_id`).
+
+La table `liste_artiste` stocke les artistes saisis dans le formulaire. Une déclaration peut en avoir plusieurs. Si une déclaration était supprimée, ses lignes d’artistes partiraient avec elle (cascade).
+
+La table `evaluation_agent` est écrite quand l’agent fixe le montant. L’agent saisit deux montants distincts : le **tarif** (référence barème BBDA) et la **redevance** (montant complémentaire selon le contexte). Le total dû se calcule en additionnant les deux. Une déclaration n’a qu’une évaluation (lien unique sur `declaration_id`). L’agent qui a saisi le montant est mémorisé via `agent_id`.
+
+La table `paiement` enregistre la confirmation d’encaissement **après** le paiement réel au guichet du BBDA (pas de paiement en ligne dans le prototype). Une même déclaration peut recevoir plusieurs versements successifs. Chaque ligne mémorise le mode, le montant, le type intégral ou partiel, le solde restant après ce versement, et l’agent confirmateur.
+
+La table `quittance` naît automatiquement lorsque le solde restant d’une déclaration atteint zéro. Le site génère un PDF, enregistre le numéro séquentiel, les montants et le chemin du fichier. Il n’y a **au plus qu’une** quittance par déclaration (relation un-pour-zéro-ou-un).
+
+La table `arriere` est créée quand un paiement ne couvre pas tout le montant. Elle est rattachée à l’organisateur et, en général, à la déclaration d’origine. Si le cumul des sommes dues atteint ou dépasse le seuil configuré (par défaut 1 000 FCFA), le statut du compte organisateur évolue et les nouvelles déclarations sont refusées jusqu’à régularisation.
+
+La table `alerte_surveillance` intervient quand un agent place un organisateur « sous surveillance ». Si cette personne se reconnecte ensuite, une alerte est créée pour les agents.
+
+La table `notification` journalise chaque email automatique (confirmation, montant fixé, quittance, rappel d’arriéré, etc.). On enregistre d’abord la notification, ensuite on tente l’envoi. Si le mail échoue, le dossier métier n’est **pas** annulé.
+
+La table `message_contact` reçoit les messages du formulaire public Contact. Elle est isolée : un visiteur n’a pas besoin d’avoir un compte.
+
+La table `parametres_systeme` permet à l’admin de modifier des réglages sans redéployer le code, notamment le seuil d’arriéré bloquant (`SEUIL_ARRIERE`) et le délai lié aux rappels (`DELAI_NOTIFICATION`).
+
+### Cycle de vie d’une déclaration (statut et comportement du site)
+
+Le champ `declaration.statut` est le « feu de signalisation » du dossier. Quand l’organisateur soumet le formulaire, le statut devient `nouvelle` : il peut encore corriger sa déclaration. Dès qu’un agent ouvre le dossier, le statut passe à `en_evaluation` : l’organisateur ne modifie plus ; l’agent analyse et peut soit fixer le montant, soit mettre le dossier `en_attente` avec un commentaire obligatoire. Quand le montant est validé, le statut devient `montant_fixe`. Après un ou plusieurs paiements, si le solde tombe à zéro, le dossier passe à `payee` puis `quittance_delivree` avec génération du PDF. Seulement à ce moment-là, si la case promotion avait été cochée, l’événement peut apparaître sur `/evenements`. Sinon, même un événement « à promouvoir » reste invisible au public.
+
+### Parcours complet : ce qui s’écrit en base
+
+À l’**inscription**, le site crée une ligne `utilisateur` (rôle organisateur) puis une ligne `organisateur` liée : deux écritures, relation un-pour-un.
+
+À la **nouvelle déclaration**, le site vérifie d’abord l’absence d’arriéré bloquant, puis crée la `declaration` au statut `nouvelle`, les lignes `liste_artiste`, et une `notification` de confirmation. L’affiche éventuelle est un fichier sur disque ; seule son adresse (`affiche_path`) est en base.
+
+Au **traitement agent**, le statut évolue vers `en_evaluation` puis `montant_fixe` ; une ligne `evaluation_agent` mémorise tarif, redevance et l’agent ; une notification prévient l’organisateur.
+
+Au **paiement**, l’agent confirme le versement guichet : une ligne `paiement` apparaît. Si le paiement est partiel, un `arriere` est créé. Si le solde tombe à zéro, une `quittance` est créée, le statut passe à `quittance_delivree`, et l’événement peut devenir public si `promouvoir` est vrai.
+
+La **face publique** ne crée pas de table spéciale : elle filtre les déclarations où `promouvoir = true` et `statut = quittance_delivree`. Sinon, le détail public répond en 404.
+
+L’**admin** crée un agent comme simple `utilisateur` (rôle agent, sans profil organisateur). Les statistiques sont des lectures agrégées. Les réglages mettent à jour `parametres_systeme`.
+
+### Comment comprendre les relations
+
+Une relation **un-pour-un** (utilisateur ↔ organisateur) signifie qu’à chaque compte organisateur correspond un seul profil, et inversement.
+
+Une relation **un-pour-plusieurs** (organisateur ↔ déclarations, ou déclaration ↔ paiements) signifie qu’un parent peut avoir plusieurs enfants.
+
+Une relation **un-pour-zéro-ou-un** (déclaration ↔ quittance) signifie que l’enfant est optionnel au début, puis unique quand il existe.
+
+Les clés étrangères (colonnes `…_id`) sont le fil concret de ces relations. Sans elles, le site ne saurait pas afficher « mes déclarations » ni empêcher un organisateur de voir le dossier d’un autre.
+
+### Ce qui n’est pas dans la base
+
+Le PDF de quittance et l’affiche d’événement sont des fichiers sur le disque du serveur ; la base ne garde que les chemins. La session de connexion est gérée par Flask-Login à partir de l’id `utilisateur`. Le mot de passe en clair n’existe nulle part en base. Sur Render, si un PDF disparaît du disque éphémère, l’application peut le régénérer grâce aux données encore présentes dans `quittance` et `declaration`.
+
+### Exemple concret raconté
+
+Aminata s’inscrit : compte dans `utilisateur` et profil dans `organisateur`. Elle déclare un concert avec trois artistes : une `declaration` au statut `nouvelle`, trois `liste_artiste`, une notification. L’agent Issa fixe un tarif de 15 000 et une redevance de 5 000 : total 20 000 dans `evaluation_agent`. Aminata paie d’abord 12 000 au guichet : un `paiement` avec solde après 8 000 et un `arriere` de 8 000. Elle paie ensuite les 8 000 restants : second `paiement`, solde à zéro, création de la `quittance`, statut `quittance_delivree`. Si elle avait coché « promouvoir », le concert apparaît alors sur la page publique.
+
+### Résumé en une phrase par table
+
+La table `utilisateur` dit qui se connecte et avec quel rôle. La table `organisateur` dit quel est le profil métier et l’état du compte. La table `declaration` est le dossier événement et son avancement. La table `liste_artiste` liste les artistes rattachés au dossier. La table `evaluation_agent` fixe le montant BBDA (tarif + redevance). La table `paiement` enregistre les encaissements confirmés par l’agent. La table `quittance` est la preuve PDF une fois tout payé. La table `arriere` représente le reste dû qui peut bloquer le compte. La table `notification` journalise les emails automatiques. La table `alerte_surveillance` signale qu’un compte surveillé s’est reconnecté. La table `message_contact` stocke les messages du formulaire public Contact. La table `parametres_systeme` conserve les réglages admin (seuil, délais).
 
 ---
 
@@ -127,7 +209,11 @@
 
 ## Détail de chaque table
 
+Ci-dessous : colonnes techniques. Les explications métier (lien avec le site) sont dans la section « Fonctionnement en lien avec le site » plus haut.
+
 ### 1. `utilisateur`
+
+Compte de connexion (organisateur, agent ou admin). Alimente inscription / connexion. Un agent ou un admin n’a pas de ligne dans `organisateur`.
 
 | Colonne | Type | Contraintes | Description |
 |---------|------|-------------|-------------|
@@ -144,6 +230,8 @@
 
 ### 2. `organisateur`
 
+Profil métier lié 1—1 à un `utilisateur` de rôle organisateur. Le `statut_compte` pilote le blocage / la surveillance côté site.
+
 | Colonne | Type | Contraintes | Description |
 |---------|------|-------------|-------------|
 | `id` | INT | PK, AUTO_INCREMENT | Identifiant |
@@ -155,6 +243,8 @@
 ---
 
 ### 3. `declaration`
+
+Dossier événement central. Le champ `statut` commande les droits organisateur / agent et l’éventuelle publication publique (avec `promouvoir`).
 
 | Colonne | Type | Contraintes | Description |
 |---------|------|-------------|-------------|
@@ -189,6 +279,8 @@
 
 ### 4. `liste_artiste`
 
+Artistes saisis sur le formulaire de déclaration (plusieurs lignes possibles par dossier).
+
 | Colonne | Type | Contraintes | Description |
 |---------|------|-------------|-------------|
 | `id` | INT | PK, AUTO_INCREMENT | Identifiant |
@@ -199,6 +291,8 @@
 ---
 
 ### 5. `evaluation_agent`
+
+Montant fixé manuellement par l’agent : Tarif + Redevance. Une évaluation par déclaration (`declaration_id` unique).
 
 | Colonne | Type | Contraintes | Description |
 |---------|------|-------------|-------------|
@@ -238,6 +332,8 @@ de la déclaration ; `solde_apres` conserve ce solde au moment de chaque verseme
 
 ### 7. `quittance`
 
+Preuve PDF créée automatiquement quand le solde de la déclaration atteint zéro. Une seule quittance par dossier.
+
 | Colonne | Type | Contraintes | Description |
 |---------|------|-------------|-------------|
 | `id` | INT | PK, AUTO_INCREMENT | Identifiant |
@@ -262,6 +358,8 @@ de la déclaration ; `solde_apres` conserve ce solde au moment de chaque verseme
 
 ### 8. `arriere`
 
+Reste dû après un paiement partiel. Peut bloquer de nouvelles déclarations si le cumul dépasse le seuil admin.
+
 | Colonne | Type | Contraintes | Description |
 |---------|------|-------------|-------------|
 | `id` | INT | PK, AUTO_INCREMENT | Identifiant |
@@ -276,6 +374,8 @@ de la déclaration ; `solde_apres` conserve ce solde au moment de chaque verseme
 ---
 
 ### 9. `notification`
+
+Journal des emails automatiques. Un échec d’envoi ne remet pas en cause le traitement métier du dossier.
 
 | Colonne | Type | Contraintes | Description |
 |---------|------|-------------|-------------|
@@ -292,6 +392,8 @@ de la déclaration ; `solde_apres` conserve ce solde au moment de chaque verseme
 
 ### 10. `alerte_surveillance`
 
+Alerte créée quand un organisateur placé sous surveillance se reconnecte.
+
 | Colonne | Type | Contraintes | Description |
 |---------|------|-------------|-------------|
 | `id` | INT | PK, AUTO_INCREMENT | Identifiant |
@@ -306,6 +408,8 @@ de la déclaration ; `solde_apres` conserve ce solde au moment de chaque verseme
 ---
 
 ### 11. `message_contact`
+
+Messages du formulaire public Contact (visiteur sans compte possible).
 
 | Colonne | Type | Contraintes | Description |
 |---------|------|-------------|-------------|
@@ -396,4 +500,4 @@ en_attente → envoyee
 
 ---
 
-*Dernière mise à jour : Juillet 2026*
+*Dernière mise à jour : 28 juillet 2026 — ajout de la section « Fonctionnement en lien avec le site ». *

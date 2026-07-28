@@ -1,0 +1,38 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#e8f0fe', 'primaryBorderColor': '#1a56a8', 'lineColor': '#333', 'fontFamily': 'Arial', 'fontSize': '16px'}}}%%
+flowchart LR
+  ORG((Organisateur))
+  AGT((Agent BBDA))
+  ADM((Administrateur))
+  PUB((Public))
+
+  subgraph S["Système BBDA Events"]
+    direction TB
+    UC1[Inscription / Connexion]
+    UC2[Déclarer un événement]
+    UC3[Suivre dossiers / télécharger quittance]
+    UC4[Demander promotion publique]
+    UC5[Évaluer Tarif + Redevance]
+    UC6[Confirmer paiement guichet]
+    UC7[Gérer arriérés et surveillance]
+    UC8[Gérer utilisateurs et paramètres]
+    UC9[Consulter statistiques]
+    UC10[Consulter événements publics]
+    UC11[Envoyer message contact]
+  end
+
+  ORG --- UC1
+  ORG --- UC2
+  ORG --- UC3
+  ORG --- UC4
+  AGT --- UC1
+  AGT --- UC5
+  AGT --- UC6
+  AGT --- UC7
+  ADM --- UC1
+  ADM --- UC5
+  ADM --- UC6
+  ADM --- UC7
+  ADM --- UC8
+  ADM --- UC9
+  PUB --- UC10
+  PUB --- UC11

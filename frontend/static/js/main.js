@@ -12,7 +12,29 @@ document.addEventListener("DOMContentLoaded", function () {
     initialiserRevealAccueil();
     initialiserDiaporamaHeros();
     initialiserAffichageMotDePasse();
+    initialiserBoutonRetour();
 });
+
+function initialiserBoutonRetour() {
+    var boutons = document.querySelectorAll("[data-retour-historique]");
+    boutons.forEach(function (bouton) {
+        bouton.addEventListener("click", function (event) {
+            var memeSite = false;
+            try {
+                if (document.referrer) {
+                    memeSite = new URL(document.referrer).origin === window.location.origin;
+                }
+            } catch (erreur) {
+                memeSite = false;
+            }
+            if (memeSite && window.history.length > 1) {
+                event.preventDefault();
+                window.history.back();
+            }
+            // Sinon : suit le href de repli (espace / accueil).
+        });
+    });
+}
 
 function initialiserFermetureMessagesFlash() {
     var boutons = document.querySelectorAll(".message__fermer");

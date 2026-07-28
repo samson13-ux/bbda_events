@@ -1,0 +1,35 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Arial'}}}%%
+flowchart TB
+  subgraph Client["Poste client / navigateur"]
+    NAV[Navigateur web<br/>Chrome / Firefox / Mobile]
+  end
+
+  subgraph Internet
+    HTTPS[HTTPS]
+  end
+
+  subgraph Render["Hébergement Render.com"]
+    GUNI[Gunicorn + Flask<br/>BBDA Events MVC]
+    DISK[Disque éphémère<br/>PDF / uploads]
+  end
+
+  subgraph Data["Données"]
+    PG[(PostgreSQL Render<br/>12 tables métier)]
+  end
+
+  subgraph Externes["Services externes"]
+    SG[SendGrid<br/>envoi emails]
+  end
+
+  subgraph Dev["Environnement de développement"]
+    LOC[Flask local]
+    MY[(MySQL local)]
+  end
+
+  NAV --> HTTPS
+  HTTPS --> GUNI
+  GUNI --> PG
+  GUNI --> DISK
+  GUNI --> SG
+
+  LOC -.-> MY

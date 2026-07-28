@@ -1,0 +1,113 @@
+%%{init: {
+  'theme': 'base',
+  'themeVariables': {
+    'primaryColor': '#eef6f1',
+    'primaryBorderColor': '#2f6b4f',
+    'primaryTextColor': '#1a1a1a',
+    'lineColor': '#2e2820',
+    'fontFamily': 'Arial',
+    'fontSize': '18px'
+  }
+}}%%
+erDiagram
+  UTILISATEUR ||--o| ORGANISATEUR : "profil 1-1"
+  ORGANISATEUR ||--o{ DECLARATION : "declare 1-N"
+  DECLARATION ||--o{ LISTE_ARTISTE : "artistes"
+  DECLARATION ||--o| EVALUATION_AGENT : "evaluation"
+  DECLARATION ||--o{ PAIEMENT : "versements"
+  DECLARATION ||--o| QUITTANCE : "quittance"
+  ORGANISATEUR ||--o{ ARRIERE : "arrieres"
+  DECLARATION ||--o{ ARRIERE : "origine"
+  UTILISATEUR ||--o{ NOTIFICATION : "emails"
+  ORGANISATEUR ||--o{ ALERTE_SURVEILLANCE : "alertes"
+
+  UTILISATEUR {
+    int id PK
+    string nom
+    string prenom
+    string email UK
+    string role
+    string statut
+  }
+
+  ORGANISATEUR {
+    int id PK
+    int utilisateur_id FK
+    string qualite
+    string telephone
+    string statut_compte
+  }
+
+  DECLARATION {
+    int id PK
+    int organisateur_id FK
+    string nature_manifestation
+    datetime date_evenement
+    bool promouvoir
+    string statut
+  }
+
+  LISTE_ARTISTE {
+    int id PK
+    int declaration_id FK
+    string nom_artiste
+    string discipline
+  }
+
+  EVALUATION_AGENT {
+    int id PK
+    int declaration_id FK
+    int agent_id FK
+    float tarif
+    float redevance
+  }
+
+  PAIEMENT {
+    int id PK
+    int declaration_id FK
+    string mode_paiement
+    float montant_chiffres
+    float solde_apres
+  }
+
+  QUITTANCE {
+    int id PK
+    int declaration_id FK
+    string numero_quittance UK
+    float somme_totale
+    string fichier_pdf
+  }
+
+  ARRIERE {
+    int id PK
+    int organisateur_id FK
+    int declaration_id FK
+    float montant_du
+    string statut
+  }
+
+  NOTIFICATION {
+    int id PK
+    int destinataire_id FK
+    string type_notification
+    string statut
+  }
+
+  ALERTE_SURVEILLANCE {
+    int id PK
+    int organisateur_id FK
+    bool traitee
+  }
+
+  MESSAGE_CONTACT {
+    int id PK
+    string nom
+    string email
+    string sujet
+  }
+
+  PARAMETRES_SYSTEME {
+    int id PK
+    string cle UK
+    string valeur
+  }

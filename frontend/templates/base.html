@@ -9,6 +9,7 @@
 <body>
     <header class="en-tete">
         <nav class="barre-navigation">
+            {% include "_bouton_retour.html" %}
             <a class="marque" href="{{ url_for('public.accueil') }}">
                 <img src="{{ url_for('static', filename='img/bbda_logo.jpg') }}" alt="Logo BBDA" class="marque__logo">
                 <span>BBDA Events</span>

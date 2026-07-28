@@ -1,0 +1,22 @@
+{# Bouton retour (flèche) — historique navigateur, avec page de repli. #}
+{% if request.endpoint != 'public.accueil' %}
+    {% if current_user.is_authenticated and current_user.role == 'organisateur' %}
+        {% set url_repli = url_for('declarations.tableau_de_bord') %}
+    {% elif current_user.is_authenticated and current_user.role == 'agent' %}
+        {% set url_repli = url_for('agent.tableau_de_bord') %}
+    {% elif current_user.is_authenticated and current_user.role == 'admin' %}
+        {% set url_repli = url_for('admin.tableau_de_bord') %}
+    {% else %}
+        {% set url_repli = url_for('public.accueil') %}
+    {% endif %}
+    <a
+        href="{{ url_repli }}"
+        class="bouton-retour{% if variante %} bouton-retour--{{ variante }}{% endif %}"
+        data-retour-historique="1"
+        aria-label="Retour à la page précédente"
+        title="Retour"
+    >
+        <span class="bouton-retour__fleche" aria-hidden="true">←</span>
+        <span class="bouton-retour__texte">Retour</span>
+    </a>
+{% endif %}

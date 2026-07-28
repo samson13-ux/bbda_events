@@ -1,0 +1,119 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#f5f7fa', 'primaryBorderColor': '#334155', 'lineColor': '#475569', 'fontFamily': 'Arial'}}}%%
+classDiagram
+  direction TB
+
+  class Utilisateur {
+    +int id
+    +str nom
+    +str prenom
+    +str email
+    +str mot_de_passe
+    +str role
+    +str statut
+    +datetime date_inscription
+  }
+
+  class Organisateur {
+    +int id
+    +int utilisateur_id
+    +str qualite
+    +str telephone
+    +str statut_compte
+  }
+
+  class Declaration {
+    +int id
+    +int organisateur_id
+    +str nature_manifestation
+    +datetime date_evenement
+    +bool promouvoir
+    +str statut
+    +datetime date_soumission
+  }
+
+  class ListeArtiste {
+    +int id
+    +int declaration_id
+    +str nom_artiste
+    +str discipline
+  }
+
+  class EvaluationAgent {
+    +int id
+    +int declaration_id
+    +int agent_id
+    +float tarif
+    +float redevance
+    +montant_total() float
+  }
+
+  class Paiement {
+    +int id
+    +int declaration_id
+    +str mode_paiement
+    +float montant_chiffres
+    +str type_paiement
+    +float solde_apres
+    +int confirme_par
+  }
+
+  class Quittance {
+    +int id
+    +int declaration_id
+    +str numero_quittance
+    +float somme_totale_chiffres
+    +str fichier_pdf_path
+    +int agent_id
+  }
+
+  class Arriere {
+    +int id
+    +int organisateur_id
+    +int declaration_id
+    +float montant_du
+    +datetime date_echeance
+    +str statut
+  }
+
+  class Notification {
+    +int id
+    +int destinataire_id
+    +str type_notification
+    +str sujet
+    +str statut
+  }
+
+  class AlerteSurveillance {
+    +int id
+    +int organisateur_id
+    +bool traitee
+    +int marque_par
+  }
+
+  class MessageContact {
+    +int id
+    +str nom
+    +str email
+    +str sujet
+    +bool traite
+  }
+
+  class ParametresSysteme {
+    +int id
+    +str cle
+    +str valeur
+  }
+
+  Utilisateur "1" --> "0..1" Organisateur : profil
+  Utilisateur "1" --> "*" Notification : reçoit
+  Organisateur "1" --> "*" Declaration : déclare
+  Organisateur "1" --> "*" Arriere : doit
+  Organisateur "1" --> "*" AlerteSurveillance : surveillé
+  Declaration "1" --> "*" ListeArtiste : artistes
+  Declaration "1" --> "0..1" EvaluationAgent : évaluée
+  Declaration "1" --> "*" Paiement : versements
+  Declaration "1" --> "0..1" Quittance : preuve
+  Declaration "1" --> "*" Arriere : origine
+  Utilisateur "1" --> "*" EvaluationAgent : agent_id
+  Utilisateur "1" --> "*" Paiement : confirme_par
+  Utilisateur "1" --> "*" Quittance : agent_id

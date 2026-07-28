@@ -12,6 +12,9 @@
 <body class="page-publique">
     <header class="en-tete-public">
         <nav class="nav-publique">
+            {% with variante='public' %}
+                {% include "_bouton_retour.html" %}
+            {% endwith %}
             <a class="marque-publique" href="{{ url_for('public.accueil') }}">
                 <img src="{{ url_for('static', filename='img/bbda_logo.jpg') }}" alt="Logo BBDA" class="marque-publique__logo">
                 <span>BBDA Events</span>

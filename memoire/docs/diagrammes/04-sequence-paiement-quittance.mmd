@@ -1,0 +1,35 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Arial'}}}%%
+sequenceDiagram
+  autonumber
+  actor Org as Organisateur
+  actor Agt as Agent BBDA
+  participant Web as BBDA Events
+  participant BDD as Base de données
+  participant PDF as ReportLab
+  participant Mail as Email
+
+  Agt->>Web: Ouvre le dossier
+  Web->>BDD: statut = en_evaluation
+  Agt->>Web: Saisit Tarif + Redevance
+  Web->>BDD: Insert/Update evaluation_agent
+  Web->>BDD: statut = montant_fixe
+  Web->>Mail: Email montant à payer
+  Web-->>Org: Notification montant
+
+  Org->>Agt: Paie au guichet BBDA
+  Agt->>Web: Confirme paiement
+  Web->>BDD: Insert paiement
+
+  alt Paiement partiel
+    Web->>BDD: Insert arriere + maj statut_compte
+    Web-->>Org: Reste dû / éventuel blocage
+  else Solde = 0
+    Web->>BDD: statut = payee puis quittance_delivree
+    Web->>PDF: Génère quittance PDF
+    Web->>BDD: Insert quittance
+    Web->>Mail: Email quittance disponible
+    Web-->>Org: Bouton télécharger PDF
+    opt promouvoir = true
+      Web-->>Org: Événement visible sur /evenements
+    end
+  end

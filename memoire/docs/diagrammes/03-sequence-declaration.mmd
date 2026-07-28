@@ -1,0 +1,22 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Arial'}}}%%
+sequenceDiagram
+  autonumber
+  actor Org as Organisateur
+  participant Web as BBDA Events
+  participant BDD as Base de données
+  participant Mail as Email
+
+  Org->>Web: Inscription / Connexion
+  Web->>BDD: Insert utilisateur + organisateur
+  Web-->>Org: Accès espace organisateur
+
+  Org->>Web: Soumet déclaration (+ artistes, option promo)
+  Web->>BDD: Vérifie arriérés / seuil
+  alt Compte bloqué
+    Web-->>Org: Refus nouvelle déclaration
+  else OK
+    Web->>BDD: Insert declaration (nouvelle) + liste_artiste
+    Web->>BDD: Insert notification
+    Web->>Mail: Email confirmation
+    Web-->>Org: Dossier créé + chronologie
+  end

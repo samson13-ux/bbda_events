@@ -1,0 +1,32 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'fontFamily': 'Arial'}}}%%
+flowchart TD
+  A([Début : besoin de déclarer un événement]) --> B{Compte organisateur ?}
+  B -->|Non| C[Inscription]
+  C --> D[Connexion]
+  B -->|Oui| D
+  D --> E{Arriéré ≥ seuil ?}
+  E -->|Oui| F([Fin : compte bloqué — régulariser])
+  E -->|Non| G[Remplir formulaire déclaration]
+  G --> H[Soumission statut = nouvelle]
+  H --> I[Agent ouvre le dossier]
+  I --> J{Infos complètes ?}
+  J -->|Non| K[statut = en_attente + commentaire]
+  K --> G
+  J -->|Oui| L[Saisie Tarif + Redevance]
+  L --> M[statut = montant_fixe]
+  M --> N[Organisateur paie au guichet]
+  N --> O[Agent confirme paiement]
+  O --> P{Solde restant = 0 ?}
+  P -->|Non| Q[Créer arriéré]
+  Q --> R{Cumul ≥ seuil ?}
+  R -->|Oui| S[Bloquer compte]
+  R -->|Non| T[Attendre nouveau versement]
+  S --> T
+  T --> N
+  P -->|Oui| U[Générer quittance PDF]
+  U --> V[statut = quittance_delivree]
+  V --> W{promouvoir ?}
+  W -->|Oui| X[Publication face publique]
+  W -->|Non| Y[Dossier clos sans vitrine]
+  X --> Z([Fin])
+  Y --> Z

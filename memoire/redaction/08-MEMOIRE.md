@@ -360,12 +360,11 @@ stage :
    d'intégration bout-en-bout), retours du maître de stage, rédaction du
    présent mémoire.
 
-[À COMPLÉTER : les diagrammes UML formels (cas d'utilisation, classes,
-séquence, déploiement, activité) annoncés dans le protocole de stage restent
-à produire — seuls le modèle de données relationnel
-(`../docs/DATABASE_SCHEMA.md`) et les règles métier (`../docs/REGLES_METIER.md`,
-`backend/statuts.py`) existent à ce stade. Il s'agit d'un livrable à ne pas
-oublier avant la soutenance.]
+Les diagrammes UML formels (cas d'utilisation, classes, séquence,
+déploiement, activité) sont produits et regroupés dans
+`../docs/diagrammes/` (sources Mermaid `.mmd` + exports PNG). Ils sont
+intégrés au Chapitre 2 (conception) et en Annexe (séquences détaillées)
+du mémoire Word.
 
 ## 2.3 Outils et choix techniques
 
@@ -768,8 +767,8 @@ réaliser pour finaliser le mémoire :
 - [x] Prompt 19 — Page détail événement + module promotion + upload affiche
 - [x] Prompt 20 — Tests fonctionnels complets et données de démonstration en
       vue de la soutenance
-- [ ] Production des diagrammes UML (cas d'utilisation, classes, séquence,
-      déploiement, activité)
+- [x] Production des diagrammes UML (cas d'utilisation, classes, séquence,
+      déploiement, activité) — dossier `../docs/diagrammes/`
 - [ ] Finalisation de la conclusion générale et des parties encore marquées
       [À COMPLÉTER] dans le présent mémoire
 
@@ -837,8 +836,8 @@ du cours suivi.)*
   (`images/*.jpg`)
 - Annexe D — Extraits de code significatifs (ex. génération de la quittance
   PDF, moteur de calcul du montant)
-- Annexe E — [À COMPLÉTER] Diagrammes UML (cas d'utilisation, classes,
-  séquence, déploiement, activité)
+- Annexe E — Diagrammes UML (cas d'utilisation, classes, séquence,
+  déploiement, activité) — fichiers dans `../docs/diagrammes/`
 - Annexe F — Captures d'écran complémentaires non reprises dans le corps du
   texte (dossier `../screenshots/`, notamment les versions intermédiaires
   01, 04, 05, 06, 28, 29 et le sous-dossier `../screenshots/integration/`)
