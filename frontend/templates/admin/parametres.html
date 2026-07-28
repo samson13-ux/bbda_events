@@ -21,31 +21,4 @@
         <button type="submit" class="bouton-soumettre bouton-soumettre--auto">Enregistrer les modifications</button>
     </form>
 </div>
-
-<div class="section-agent">
-    <h2>Test email</h2>
-    <p class="sous-titre-section">
-        Canal actif : <strong>{{ email_canal }}</strong>
-        — Expéditeur : <strong>{{ email_expediteur or "(vide)" }}</strong>
-    </p>
-    <p class="sous-titre-section">
-        SENDGRID_API_KEY :
-        {% if email_sendgrid_present %}
-        <strong>détectée</strong> ({{ email_sendgrid_longueur }} caractères)
-        {% else %}
-        <strong>absente</strong> — à ajouter dans Render → Environment, puis redeploy
-        {% endif %}
-    </p>
-    <p class="sous-titre-section">
-        Local = SMTP Gmail. Render = SendGrid (`SENDGRID_API_KEY` + `MAIL_USERNAME` = Single Sender).
-    </p>
-    <form method="post" action="{{ url_for('admin.tester_email') }}">
-        {% include '_csrf.html' %}
-        <div class="champ-formulaire">
-            <label for="email_test">Envoyer un email de test à</label>
-            <input type="email" id="email_test" name="email_test" value="{{ current_user.email }}" required>
-        </div>
-        <button type="submit" class="bouton-soumettre bouton-soumettre--auto">Envoyer le test</button>
-    </form>
-</div>
 {% endblock %}

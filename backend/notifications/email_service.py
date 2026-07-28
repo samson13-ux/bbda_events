@@ -251,44 +251,6 @@ def _piece_jointe_pdf(chemin, nom_fichier):
         }
 
 
-def tester_envoi_email(destinataire_email):
-    """Envoi de test admin. Retourne (ok, message)."""
-    destinataire_email = (destinataire_email or "").strip().lower()
-    if not destinataire_email or "@" not in destinataire_email:
-        return False, "Indique un email destinataire valide."
-
-    canal = _canal_actif()
-    if not canal:
-        return (
-            False,
-            "Aucun canal : SENDGRID_API_KEY + MAIL_USERNAME (Render) "
-            "ou MAIL_USERNAME + MAIL_PASSWORD (local).",
-        )
-    if canal == "sendgrid" and not _expediteur():
-        return False, "SENDGRID_API_KEY présent, mais MAIL_USERNAME (Single Sender) manque."
-
-    class _NotifTest:
-        sujet = "BBDA Events : Test d'envoi email"
-
-    notification = _NotifTest()
-    try:
-        paragraphes = [
-            "Ceci est un email de test depuis l'espace admin BBDA Events.",
-            f"Expéditeur : {_expediteur()}",
-            f"Canal : {canal}",
-            "Si tu reçois ce message, les notifications email fonctionnent.",
-        ]
-        _dispatch_envoi(
-            notification,
-            destinataire_email,
-            _gabarit_html(notification.sujet, paragraphes),
-        )
-        return True, f"Email de test accepté ({canal}). Vérifie {destinataire_email} (et les spams)."
-    except Exception as erreur:  # noqa: BLE001
-        current_app.logger.exception("Echec test email admin")
-        return False, f"Échec d'envoi : {erreur}"
-
-
 def _boite_dediee_et_admin():
     """Retourne (email_boite_dediee, admin) ou (None, None) si non configurable."""
     boite = _expediteur()

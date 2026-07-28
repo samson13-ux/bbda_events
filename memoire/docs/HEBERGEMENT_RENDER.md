@@ -46,7 +46,7 @@ Dans le Web Service → **Environment** :
 1. Single Sender vérifié (déjà fait)
 2. Settings → API Keys → Create API Key (permission **Mail Send**)
 3. Render Environment : `SENDGRID_API_KEY` + `MAIL_USERNAME`
-4. Admin → Paramètres → Envoyer le test
+4. Redeploy — les notifications métier utilisent automatiquement SendGrid
 
 ### Astuce DATABASE_URL
 

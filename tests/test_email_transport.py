@@ -2,7 +2,6 @@
 
 from unittest.mock import MagicMock, patch
 
-import bcrypt
 import pytest
 
 from app import create_app
@@ -85,33 +84,3 @@ def test_envoyer_passe_par_sendgrid(app_sendgrid):
             _envoyer(notification, "dest@example.com", "<p>Hello</p>")
         assert notification.statut == "envoyee"
         assert "api.sendgrid.com" in mock_open.call_args[0][0].full_url
-
-
-@pytest.fixture
-def app_admin():
-    application = create_app("testing")
-    application.config["SENDGRID_API_KEY"] = "SG.test"
-    application.config["MAIL_USERNAME"] = "bbda.events@test.local"
-    with application.app_context():
-        db.create_all()
-        hachage = bcrypt.hashpw(b"password123", bcrypt.gensalt()).decode("utf-8")
-        db.session.add(
-            Utilisateur(
-                nom="Admin",
-                prenom="Test",
-                email="admin@bbda.bf",
-                mot_de_passe=hachage,
-                role="admin",
-            )
-        )
-        db.session.commit()
-        yield application
-        db.drop_all()
-
-
-def test_parametres_affiche_canal_sendgrid(app_admin):
-    client = app_admin.test_client()
-    client.post("/auth/connexion", data={"email": "admin@bbda.bf", "password": "password123"})
-    page = client.get("/admin/parametres").get_data(as_text=True)
-    assert "Canal actif" in page
-    assert "sendgrid" in page

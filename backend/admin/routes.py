@@ -8,13 +8,12 @@ Tableau de bord, statistiques globales, gestion des comptes utilisateurs
 from datetime import datetime
 
 import bcrypt
-from flask import current_app, flash, redirect, render_template, request, url_for
+from flask import flash, redirect, render_template, request, url_for
 from flask_login import current_user
 from sqlalchemy import extract, func
 
 from backend.arrieres.moteur import DELAI_NOTIFICATION_DEFAUT, SEUIL_ARRIERE_DEFAUT
 from backend.auth.decorators import role_required
-from backend.notifications.email_service import tester_envoi_email
 from extensions import db
 from models import (
     AlerteSurveillance,
@@ -270,36 +269,11 @@ def parametres():
         flash("Paramètres enregistrés.", "succes")
         return redirect(url_for("admin.parametres"))
 
-    cle = (current_app.config.get("SENDGRID_API_KEY") or "").strip()
     return render_template(
         "admin/parametres.html",
         seuil_arriere=_parametre_ou_defaut("SEUIL_ARRIERE", SEUIL_ARRIERE_DEFAUT),
         delai_notification=_parametre_ou_defaut("DELAI_NOTIFICATION", DELAI_NOTIFICATION_DEFAUT),
-        email_canal=(
-            "sendgrid"
-            if cle
-            else (
-                "smtp"
-                if current_app.config.get("MAIL_USERNAME") and current_app.config.get("MAIL_PASSWORD")
-                else "aucun"
-            )
-        ),
-        email_expediteur=(
-            current_app.config.get("MAIL_DEFAULT_SENDER") or current_app.config.get("MAIL_USERNAME") or ""
-        ),
-        email_sendgrid_present=bool(cle),
-        email_sendgrid_longueur=len(cle),
     )
-
-
-@admin_bp.route("/parametres/tester-email", methods=["POST"])
-@role_required("admin")
-def tester_email():
-    """Envoie un email de test (SendGrid ou SMTP) et affiche le resultat."""
-    destinataire = request.form.get("email_test", "").strip() or current_user.email
-    ok, detail = tester_envoi_email(destinataire)
-    flash(detail, "succes" if ok else "erreur")
-    return redirect(url_for("admin.parametres"))
 
 
 @admin_bp.route("/messages-contact")
