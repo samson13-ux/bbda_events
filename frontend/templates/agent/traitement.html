@@ -1,9 +1,9 @@
 {% extends "agent/base_agent.html" %}
-{% block titre %}BBDA Events : Traitement déclaration #{{ declaration.id }}{% endblock %}
+{% block titre %}BBDA Events : Traitement déclaration n°{{ declaration.id }}{% endblock %}
 {% block contenu_agent %}
 <div class="entete-agent">
     <div>
-        <h1>Déclaration #{{ declaration.id }} - {{ declaration.nature_manifestation }}</h1>
+        <h1>Déclaration n°{{ declaration.id }} - {{ declaration.nature_manifestation }}</h1>
         <span class="badge badge--grand badge--{{ libelle_css }}">{{ libelle_statut }}</span>
     </div>
     <div>

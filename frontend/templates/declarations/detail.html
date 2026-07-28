@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block titre %}BBDA Events : Déclaration #{{ declaration.id }}{% endblock %}
+{% block titre %}BBDA Events : Déclaration n°{{ declaration.id }}{% endblock %}
 {% block contenu %}
 <div class="entete-detail">
     <div>
-        <h1>Déclaration #{{ declaration.id }} - {{ declaration.nature_manifestation }}</h1>
+        <h1>Déclaration n°{{ declaration.id }} - {{ declaration.nature_manifestation }}</h1>
         <span class="badge badge--grand badge--{{ libelle_css }}">{{ libelle_statut }}</span>
     </div>
     <div class="entete-detail__actions">

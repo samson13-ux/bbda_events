@@ -385,7 +385,7 @@ def modifier(declaration_id):
             mode_edition=True,
             declaration=declaration,
             action_url=url_for("declarations.modifier", declaration_id=declaration.id),
-            titre_formulaire=f"Modifier la déclaration #{declaration.id}",
+            titre_formulaire=f"Modifier la déclaration n°{declaration.id}",
             libelle_bouton="Enregistrer les modifications",
         )
 
@@ -410,7 +410,7 @@ def modifier(declaration_id):
                 mode_edition=True,
                 declaration=declaration,
                 action_url=url_for("declarations.modifier", declaration_id=declaration.id),
-                titre_formulaire=f"Modifier la déclaration #{declaration.id}",
+                titre_formulaire=f"Modifier la déclaration n°{declaration.id}",
                 libelle_bouton="Enregistrer les modifications",
             ),
             400,

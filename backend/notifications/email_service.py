@@ -263,7 +263,7 @@ def _boite_dediee_et_admin():
 def notifier_confirmation_declaration(declaration):
     """Confirme a l'organisateur la reception de sa declaration (RM-014)."""
     utilisateur = declaration.organisateur.utilisateur
-    sujet = f"BBDA Events : Déclaration #{declaration.id} reçue avec succès"
+    sujet = f"BBDA Events : Déclaration n°{declaration.id} reçue avec succès"
     paragraphes = [
         f"Bonjour {declaration.prenom_demandeur} {declaration.nom_demandeur},",
         f"Votre déclaration pour l'événement « {declaration.nom_artiste_evenement} » "
@@ -296,7 +296,7 @@ def notifier_nouvelle_declaration_bbda(declaration):
     boite, admin = _boite_dediee_et_admin()
     if not boite:
         current_app.logger.warning(
-            "Boite dediee ou admin absent : alerte nouvelle declaration #%s non envoyee.",
+            "Boite dediee ou admin absent : alerte nouvelle declaration n°%s non envoyee.",
             declaration.id,
         )
         return None
@@ -307,10 +307,10 @@ def notifier_nouvelle_declaration_bbda(declaration):
         lien = f"/agent/declarations/{declaration.id}"
 
     organisateur = declaration.organisateur.utilisateur
-    sujet = f"BBDA Events : Nouvelle déclaration #{declaration.id} à traiter"
+    sujet = f"BBDA Events : Nouvelle déclaration n°{declaration.id} à traiter"
     paragraphes = [
         "Une nouvelle déclaration d'événement a été soumise et attend un traitement.",
-        f"<strong>Déclaration :</strong> #{declaration.id} - {declaration.nature_manifestation}",
+        f"<strong>Déclaration :</strong> n°{declaration.id} - {declaration.nature_manifestation}",
         f"<strong>Événement :</strong> {declaration.nom_artiste_evenement}",
         f"<strong>Date :</strong> {declaration.date_evenement.strftime('%d/%m/%Y à %Hh%M')}",
         f"<strong>Lieu :</strong> {declaration.nom_salle}, {declaration.ville}",
@@ -318,7 +318,7 @@ def notifier_nouvelle_declaration_bbda(declaration):
         f'<a href="{lien}">Ouvrir le dossier dans l\'espace agent</a>',
     ]
     texte = (
-        f"Nouvelle declaration #{declaration.id}\n"
+        f"Nouvelle declaration n°{declaration.id}\n"
         f"Evenement : {declaration.nom_artiste_evenement}\n"
         f"Organisateur : {organisateur.prenom} {organisateur.nom} ({declaration.email})\n"
         f"Lien : {lien}\n"
